@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
-import sys, os
-import matplotlib._color_data as mcd
+import bscaling_functions as b
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import Rectangle
@@ -9,322 +8,6 @@ from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':'12'})
 rc('text', usetex=False)
 
-def idxStr(l1, s):
-    idx = []
-    i = 0
-    length = len(l1)
-    while i < length:
-        if s == l1[i]:
-            idx.append(i)
-        i += 1
-    return idx
-
-def getPlotTitle(myfdip=None, fdip_range= [None]*2, myEr=None, Er_range=[None]*2):
-    title_str = ""
-    comma = False
-    if (myfdip == 1): 
-        title_str = "$f_{dip}>0.5$"
-        comma = True
-    elif (myfdip == 2):
-        title_str = "$0.35< f_{dip}<0.80"
-    elif (myfdip == 3):
-        title_str = "$0.40< f_{dip}<0.80$"
-        comma = True
-
-    if (myEr == 1):
-        if comma:
-            title_str += ", "+ "EM/EK $\geq %.1f$" %(Er_range[0])
-        else:
-            title_str += "EM/EK $\geq %.1f$" %(Er_range[0])
-            comma = True
-
-    return title_str
-
-def fits(P, Le, fohm):
-    if (len(P) != len(Le) or len(P) != len(fohm) or len(Le) != len(fohm)):
-        raise ValueError("Le, P, ohm arrays have different dimensions.")
-    else:
-        nsims = len(P)
-    if nsims>2:
-        fp,ssr,rnk,sv,rc = np.polyfit(np.log10(P), np.log10(Le/fohm**0.5), 1, full=True)
-        [m, c], cov      = np.polyfit(np.log10(P), np.log10(Le/fohm**0.5), 1, cov=True, full=False)
-        res              = np.sqrt(cov[0,0]) # error on slope
-    elif nsims==2:
-        dy = np.log10(Le[1]/fohm[1]**0.5)-np.log10(Le[0]/fohm[0]**0.5)
-        dx = np.log10(P[1])-np.log10(P[0])
-        m = dy/dx
-        c = 0.5*(np.log10(Le[1]/fohm[1]**0.5)+np.log10(Le[0]/fohm[0]**0.5))-0.5*m*(np.log10(P[1])+np.log10(P[0]))
-        ssr = [0.]
-        res = 0.
-    else:
-        raise ValueError("1 data point. No fit possible")
-
-    return ssr, m, c, res
-
-def shellVolume(ar):
-    """
-    Calculates spherical shell volume (in units of the
-    shell gap D) from aspect ratio ar.
-    """
-    vol = 4./3.*np.pi*((1.-ar)**(-3)-(1./ar-1.)**(-3))
-    return vol
-
-def prefacError(x, y, model=[None,None], plot=False, quiet=False):
-    """
-    Calculates errors on the power law prefactor.
-    This follows Aubert et al. GJI 179, 1414, 2009 (sec. 2.3).
-    Specifically, the standard deviation sd_err returned by this function
-    is \sigma in Aubert's paper.
-    x     : Buoyancy power P of sims data points
-    y     : Le/fohm^0.5 of sims data points
-    model : list of [10^(prefac), slope] from the fit of the sims
-    """
-    prefac = model[0]
-    slope = model[1]
-    err = np.log10(y) - (np.log10(prefac) + slope*np.log10(x))
-    mean_err = np.mean(err)
-    sd_err = np.std(err)
-    if not quiet:
-        print('\nError estimate on prefactor')
-        print('Error (mean, std dev): %s %s' %(mean_err,sd_err))
-    if plot:
-        fig = plt.figure(figsize=(8,6))
-        ax = fig.add_subplot(111)
-        xpltmin = np.min(err); xpltmax = np.max(err)
-        counts, bins, patches = ax.hist(err, bins=15,
-                                        normed=True, align='mid', color='grey', edgecolor='dimgrey', rwidth=0.85)
-        ypltmin = 0.; ypltmax = np.max(counts)
-        ax.plot([mean_err]*2, [ypltmin,ypltmax], c='r', ls='-', lw=2.)
-        ax.plot([mean_err+sd_err]*2, [ypltmin,ypltmax], c='r', ls='--', lw=2.)
-        ax.plot([mean_err-sd_err]*2, [ypltmin,ypltmax], c='r', ls='--', lw=2.)
-        ax.set_xlim([xpltmin,xpltmax])
-        ax.set_ylim([ypltmin,ypltmax])
-        ax.set_xlabel('Vertical error e')
-        ax.set_ylabel('Probability density')
-        plt.show(block=False)
-        plt.tight_layout()
-        plt.savefig('./eardme/fig/Err_distribution.pdf',format='pdf')
-        del ax
-    return [mean_err, sd_err]
-
-def get_fdip(infname=None, dataset="Leeds"):
-    """
-    Get value of fdip from main data file
-    """
-    if dataset == "Leeds":
-        df = pd.read_csv(infname)
-        fdip = df['cmb_diptyAve'].values
-    elif dataset == "Aubert":
-        cols_names = ['E','RaQ','Pr','Pm','chi','fi','Ro','Lo','bdip','fdip','lbar','tauDiss','p','fohm']
-        E,RaQ,Pr,Pm,chi,fi,Ro,Lo,bdip,fdip,lbar,tauDiss,p,fohm = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=1, unpack='true')
-    elif dataset == "Yadav":
-        cols_names = ['E','Ra','Pm','KE_pol','KE_tor','Re','Rol','Nu','ME_pol','ME_tor','Elsasser','Elsasser_CMB','Dip','Dip_CMB','Dip_CMB_l11','Buo_pow','Ohm_diss','l_bar_u','l_bar_B','run_time','l_max','r_max']
-        E,Ra,Pm,KE_pol,KE_tor,Re,Rol,Nu,ME_pol,ME_tor,Els,ElsCMB,Dip,DipCMB,DipCMBl11,Buo_pow,Ohm_diss,l_bar_u,l_bar_B,run_time,l_max,r_max = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=1, unpack='true')
-        fdip = DipCMBl11
-    elif dataset == "Christensen":
-        cols_names = ['E','Ra','Rac','Pr','Pm','icc','lmax','nr','mc','Re','Rm','Ro','Rol','Ekin','po','ta','lm','mmd','Nu','Emag','ex','po1','pa','ta1','lm1','mmd1','B','Bsur','B12','Bdip','Bax','pow','jou','tmag','tvis','trun','tad','Tm','T2','R2R1','Filename']
-        E,Ra,Rac,Pr,Pm,icc,lmax,nr,mc,Re,Rm,Ro,Rol,Ekin,po,ta,lm,mmd,Nu,Emag,ex,po1,pa,ta1,lm1,mmd1,B,Bsur,B12,Bdip,Bax,pow,jou,tmag,tvis,trun,tad,Tm,T2,R2R1 = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names)-1)), skiprows=2, unpack='true')
-        fdip = Bdip/B12
-    elif dataset == "ChristensenT":
-        cols_names = ['E','Ra','Rac','Pr','Pm','icc','qs','lmax','nr','mc','Re','Rm','Ro','Rol','Ekin','po','ta','lm','mmd','Nu','Emag','ex','po1','pa','ta1','lm1','mmd1','B','Bsur','B12','Bdip','Bax','pow','jou','tmag','tvis','trun','tad','Tm','T2','vrat','Filename']
-        E,Ra,Rac,Pr,Pm,icc,qs,lmax,nr,mc,Re,Rm,Ro,Rol,Ekin,po,ta,lm,mmd,Nu,Emag,ex,po1,pa,ta1,lm1,mmd1,B,Bsur,B12,Bdip,Bax,pow,jou,tmag,tvis,trun,tad,Tm,T2,vrat = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names)-1)), skiprows=1, unpack='true')
-        fdip = Bdip/B12
-    else:
-        raise ValueError("Not valid dataset name provided.")
-    return fdip
-
-def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, EkOPm_range=None, EMoEK_range=None, datadict=None):
-    """
-    This function filters the original tables of simulations by fdip, E/Pm, and EM/EK
-    and saves out the filtered table (preserving the original format).
-    infname     : Input file name
-    outfname    : Output file name of filtered data
-    dataset     : String ("Leeds","Aubert","Yadav","Christensen", or "ChristensenT"). Make sure it is consistent with infname.
-    fdip_range  : list of min and max values of fdip
-    EkOPm_range : set to range filter by E/Pm
-    EMoEK_range : set to range to filter by EM/EK
-    """
-
-    if fdip_range is not None:
-        filter_fdip = True
-        print("\nReading file: %s" %(infname))
-        fdip_min = fdip_range[0]
-        fdip_max = fdip_range[1]
-        print("\nFilter fdip (min,max) : %s %s" %(fdip_min,fdip_max))
-    else:
-        filter_fdip = False
-    if EkOPm_range is not None:
-        EkOPm_min = EkOPm_range[0]; EkOPm_max = EkOPm_range[1]
-        print('\nFiltering by Ek/Pm (min,max) = %s %s' %(EkOPm_min,EkOPm_max))
-        if (EkOPm_min > EkOPm_max):
-            raise ValueError('Not valid range of Ek/Pm: min > max.')
-    if EMoEK_range is not None:
-        filter_Er = True
-        Er_min = EMoEK_range[0]; Er_max = EMoEK_range[1]
-        print('\nFiltering by EM/EK (min,max) = %s %s' %(Er_min,Er_max))
-        if (Er_min > Er_max):
-            raise ValueError('Not valid range of EM/EK: min > max.')
-    else:
-        filter_Er = False
-    if EkOPm_range is not None:
-        filter_EkOPm = True
-    else:
-        filter_EkOPm = False
-    # -------------------
-    # - Leeds simulations
-    # -------------------
-    if dataset == "Leeds":
-        df = pd.read_csv(infname)
-        if filter_fdip:
-            # Filter fdip
-            mask_fdip = (df['cmb_diptyAve'] > fdip_min) & (df['cmb_diptyAve'] < fdip_max)
-            new_df = df[mask_fdip]
-        else:
-            new_df = df
-        if filter_Er:
-            mask_Er = (new_df['EmagAve'].values/new_df['EkinAve'].values >= Er_min) &\
-                      (new_df['EmagAve'].values/new_df['EkinAve'].values <= Er_max)
-            new_df = new_df[mask_Er]
-        if filter_EkOPm:
-            mask_EkOPm = (new_df['Ek'].values*2./new_df['Pm'].values > EkOPm_min) & (new_df['Ek'].values*2./new_df['Pm'].values < EkOPm_max)
-            new_df = new_df[mask_EkOPm]
-        nsims = len(new_df['Ek'].values)
-        if (nsims<2):
-            datadict["L"] = False
-            print("\nNot plotting L dataset!\n")
-        datadict["nL"] = nsims
-    # ---------------------------------
-    # - Aubert et al (2009) simulations
-    # ---------------------------------
-    elif dataset == "Aubert":
-        cols_names = ['E','RaQ','Pr','Pm','chi','fi','Ro','Lo','bdip','fdip','lbar','tauDiss','p','fohm']
-        E,RaQ,Pr,Pm,chi,fi,Ro,Lo,bdip,fdip,lbar,tauDiss,p,fohm = np.loadtxt(infname,\
-            usecols=tuple(np.arange(len(cols_names))), skiprows=1, unpack='true')
-        # Create data dictionary
-        data_dict = {'E':E,'RaQ':RaQ,'Pr':Pr,'Pm':Pm,'chi':chi,'fi':fi,'Ro':Ro,'Lo':Lo,'bdip':bdip,\
-                     'fdip':fdip,'lbar':lbar,'tauDiss':tauDiss,'p':p,'fohm':fohm}
-        # Create dataframe
-        df = pd.DataFrame(data_dict, columns=cols_names)
-        if filter_fdip:
-            mask_fdip = (df['fdip'] > fdip_min) & (df['fdip'] < fdip_max)
-            new_df = df[mask_fdip]
-        else:
-            new_df = df
-        if filter_Er:
-            mask_Er = (new_df['Lo'].values**2/new_df['Ro'].values**2 >= Er_min) & (new_df['Lo'].values**2/new_df['Ro'].values**2 <= Er_max)
-            new_df = new_df[mask_Er]
-        if filter_EkOPm:
-            mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
-            new_df = new_df[mask_EkOPm]
-        nsims = len(new_df['E'].values)
-        if (nsims<2):
-            datadict["A"] = False
-            print("\nNot plotting A dataset!\n")
-        datadict["nA"] = nsims
-    # -------------------
-    # - Yadav simulations
-    # -------------------
-    elif dataset == "Yadav":
-        cols_names = ['E','Ra','Pm','KE_pol','KE_tor','Re','Rol','Nu','ME_pol','ME_tor','Elsasser','Elsasser_CMB',\
-                      'Dip','Dip_CMB','Dip_CMB_l11','Buo_pow','Ohm_diss','l_bar_u','l_bar_B','run_time','l_max','r_max']
-        E,Ra,Pm,KE_pol,KE_tor,Re,Rol,Nu,ME_pol,ME_tor,Els,ElsCMB,Dip,DipCMB,DipCMBl11,Buo_pow,Ohm_diss,l_bar_u,l_bar_B,\
-            run_time,l_max,r_max = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=1, unpack='true')
-        # Create data dictionary
-        data_dict = {'E':E,'Ra':Ra,'Pm':Pm,'KE_pol':KE_pol,'KE_tor':KE_tor,'Re':Re,'Rol':Rol,'Nu':Nu,\
-                     'ME_pol':ME_pol,'ME_tor':ME_tor,'Elsasser':Els,'Elsasser_CMB':ElsCMB,'Dip':Dip,'Dip_CMB':DipCMB,\
-                     'Dip_CMB_l11':DipCMBl11,'Buo_pow':Buo_pow,'Ohm_diss':Ohm_diss,'l_bar_u':l_bar_u,'l_bar_B':l_bar_B,\
-                     'run_time':run_time,'l_max':l_max,'r_max':r_max}
-        # Create data frame
-        df = pd.DataFrame(data_dict, columns=cols_names)
-        if filter_fdip:
-            mask_fdip = (df['Dip_CMB_l11'] > fdip_min) & (df['Dip_CMB_l11'] < fdip_max)
-            new_df = df[mask_fdip]
-        else:
-            new_df = df
-        if filter_Er:
-            mask_Er = ((new_df['ME_tor'].values+new_df['ME_pol'].values)/(new_df['KE_tor'].values+new_df['KE_pol'].values) >= Er_min) &\
-                      ((new_df['ME_tor'].values+new_df['ME_pol'].values)/(new_df['KE_tor'].values+new_df['KE_pol'].values) <= Er_max)
-            new_df = new_df[mask_Er]
-        if filter_EkOPm:
-            mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
-            new_df = new_df[mask_EkOPm]
-        nsims = len(new_df['E'].values)
-        if (nsims<2):
-            datadict["Y"] = False
-            print("\nNot plotting Y dataset!\n")
-        datadict["nY"] = nsims
-    # -------------------------
-    # - Christensen simulations
-    # -------------------------
-    elif dataset == "Christensen":
-        cols_names = ['E','Ra','Rac','Pr','Pm','icc','lmax','nr','mc','Re','Rm','Ro','Rol','Ekin','po','ta','lm',
-                      'mmd','Nu','Emag','ex','po1','pa','ta1','lm1','mmd1','B','Bsur','B12','Bdip','Bax','pow','jou',
-                      'tmag','tvis','trun','tad','Tm','T2','R2R1','Filename']
-        str_header0 = '%l%E     Ra  Rac Pr Pm icc lmax nr mc  Re  Rm  Ro  Rol Ekin %po %ta lm mmd  Nu  Emag %ex %po %pa %ta lm mmd B  Bsur  B12  Bdip Bax pow %jou tmag tvis trun tad Tm  T2 R2R1'
-        E,Ra,Rac,Pr,Pm,icc,lmax,nr,mc,Re,Rm,Ro,Rol,Ekin,po,ta,lm,mmd,Nu,Emag,ex,po1,pa,ta1,lm1,mmd1,B,Bsur,B12,Bdip,Bax,pow,jou,tmag,tvis,trun,tad,Tm,T2,R2R1 = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names)-1)), skiprows=2, unpack='true')
-        # Create data dictionary
-        data_dict = {'E':E,'Ra':Ra,'Rac':Rac,'Pr':Pr,'Pm':Pm,'icc':icc,'lmax':lmax,'nr':nr,'mc':mc,'Re':Re,'Rm':Rm,'Ro':Ro,'Rol':Rol,'Ekin':Ekin,'po':po,'ta':ta,'lm':lm,'mmd':mmd,'Nu':Nu,'Emag':Emag,'ex':ex,'po1':po1,'pa':pa,'ta1':ta1,'lm1':lm1,'mmd1':mmd1,'B':B,'Bsur':Bsur,'B12':B12,'Bdip':Bdip,'Bax':Bax,'pow':pow,'jou':jou,'tmag':tmag,'tvis':tvis,'trun':trun,'tad':tad,'Tm':Tm,'T2':T2,'R2R1':R2R1}
-        # Create dataframe
-        df = pd.DataFrame(data_dict, columns=cols_names[0:-1])
-        if filter_fdip:
-            mask_fdip = (df['Bdip'].values/df['B12'].values > fdip_min) & (df['Bdip'].values/df['B12'].values < fdip_max)
-            new_df = df[mask_fdip]
-        else:
-            new_df = df
-        if filter_Er:
-            mask_Er = ((new_df['Emag'].values/new_df['Ekin'].values) >= Er_min) & ((new_df['Emag'].values/new_df['Ekin'].values) <= Er_max)
-            new_df = new_df[mask_Er]
-        if filter_EkOPm:
-            mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
-            new_df = new_df[mask_EkOPm]
-        nsims = len(new_df['E'].values)
-        if (nsims<2):
-            datadict["UC"] = False
-            print("\nNot plotting UC dataset!\n")
-        datadict["nUC"] = nsims
-    # -------------------------
-    # - Christensen simulations
-    # -------------------------
-    elif dataset == "ChristensenT":
-        cols_names = ['E','Ra','Rac','Pr','Pm','icc','qs','lmax','nr','mc','Re','Rm','Ro','Rol','Ekin','po','ta','lm','mmd','Nu','Emag','ex','po1','pa','ta1','lm1','mmd1','B','Bsur','B12','Bdip','Bax','pow','jou','tmag','tvis','trun','tad','Tm','T2','vrat','Filename']
-        str_header = '%l%E     Ra  Rac Pr Pm icc  qs  lmax nr mc  Re  Rm  Ro  Rol Ekin %po %ta lm mmd  Nu  Emag %ex %po %pa %ta lm mmd B  Bsur B12  Bdip Bax pow %jou tmag tvis trun tad Tm  T2 vrat'
-        E,Ra,Rac,Pr,Pm,icc,qs,lmax,nr,mc,Re,Rm,Ro,Rol,Ekin,po,ta,lm,mmd,Nu,Emag,ex,po1,pa,ta1,lm1,mmd1,B,Bsur,B12,Bdip,Bax,pow,jou,tmag,tvis,trun,tad,Tm,T2,vrat = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names)-1)), skiprows=2, unpack='true')
-        # Create data dictionary
-        data_dict = {'E':E,'Ra':Ra,'Rac':Rac,'Pr':Pr,'Pm':Pm,'icc':icc,'qs':qs,'lmax':lmax,'nr':nr,'mc':mc,'Re':Re,'Rm':Rm,'Ro':Ro,'Rol':Rol,'Ekin':Ekin,'po':po,'ta':ta,'lm':lm,'mmd':mmd,'Nu':Nu,'Emag':Emag,'ex':ex,'po1':po1,'pa':pa,'ta1':ta1,'lm1':lm1,'mmd1':mmd1,'B':B,'Bsur':Bsur,'B12':B12,'Bdip':Bdip,'Bax':Bax,'pow':pow,'jou':jou,'tmag':tmag,'tvis':tvis,'trun':trun,'tad':tad,'Tm':Tm,'T2':T2,'vrat':vrat}
-        df = pd.DataFrame(data_dict, columns=cols_names[0:-1])
-        # Filter fdip
-        mask_fdip = (df['Bdip'].values/df['B12'].values > fdip_min) & (df['Bdip'].values/df['B12'].values < fdip_max)
-        new_df = df[mask_fdip]
-        if filter_Er:
-            mask_Er = ((new_df['Emag'].values/new_df['Ekin'].values) >= Er_min) & ((new_df['Emag'].values/new_df['Ekin'].values) <= Er_max)
-            new_df = new_df[mask_Er]
-        if filter_EkOPm:
-            mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
-            new_df = new_df[mask_EkOPm]
-        nsims = len(new_df['E'].values)
-        if (nsims<2):
-            datadict["UCt"] = False
-            print("\nNot plotting UCt dataset!\n")
-        datadict["nUCt"] = nsims
-    else:
-        raise ValueError("Not valid dataset")
-
-    # Save out file
-    if (filter_fdip or filter_Er or filter_EkOPm):
-        print("\nSaving out file: %s" %(outfname))
-        if (dataset=="Leeds"):
-            new_df.to_csv(outfname, index=False, sep=",")
-        else:
-            new_df.to_csv(outfname, index=False, sep=" ")
-        if (dataset=="Christensen"):
-            # Insert second line header as in original Christensen table
-            str_header1 = '                                    10^-3                                                                       10^7    10^-4          10^-4'
-            shell_cmd = "sed -i '2i\\"+str_header1+"\\' "+outfname
-            os.system(shell_cmd)
-        # On screen outputs
-        print('Number of models in dataset (original, filtered) = %s %s' %(len(df),len(new_df)))
- 
-    return new_df, datadict
 
 # ------------------------
 # --- Input parameters ---
@@ -334,6 +17,7 @@ myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
 myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
+
 if (myEkOPm==1):
     EkOPm_range = [1.e-10,1.e-4] # Range of Ek/Pm to include in the analysis (Ek=\nu/\Omega*D^2 as in Aubert's definition)
 else:
@@ -342,9 +26,9 @@ if (myEr==1):
     EMoEK_range = [2.,1.e+9]
 else:
     EMoEK_range = None
+    
 # List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
-# * IMA (or Energy below) corresponds to QG-MAC in the new notation.
-#plt_extrap_scalings = ["IMA","MAC","IMAC","IMACd","IMACi"]
+# IMA (or Energy below) corresponds to QG-MAC in the new notation.
 plt_extrap_scalings = ["IMA","MAC"]
 lc_fit              = ["g",  "darkgrey"] # Line colour of fits
 sc_fit              = ["lightgreen", "lightgrey"] # Shading colour for \sigma intervals
@@ -352,24 +36,28 @@ sc_alpha            = 0.7
 ls_fit              = ["--", ":"] # Line style of fits
 lw_fit = 2. # Line-width of fits in plots
 chk    = 0 # Use 1 to print on screen checks of energy (quiet otherwise)
+
 # Internal consistency check of Leeds sims. It compares the cmb (total and dipole) field strengths
 # calculated from mag_cmb-files and Gauss coeffs-files.
 check_gauss_Led = False
 # Plot and analyse bdip?
 plt_bdip = False
+
 # ------------------------
 # ------------------------
 
 # Logical values for plotting datasets
 datadict = {"L":True, "A":True, "Y":True, "UC":True, "UCt":True, "A17":True}
 
+leedsname = "./all_LED_tave_NEW.csv"
+yadavname = "./Yadav_etal_pnas_16_data.xls_all"
+aubertname= "./aubert2009-all.txt"
+christname= "./dynq_mycode.data"
+christnamet="./dyntq_mycode.data"
+
 if myfdip == 0:
     fdipn = "0"
-    leedsname = "./all_LED_tave_NEW.csv"
-    yadavname = "./Yadav_etal_pnas_16_data.xls_all"
-    aubertname= "./aubert2009-all.txt"
-    christname= "./dynq_mycode.data"
-    christnamet="./dyntq_mycode.data"
+
     if (myEkOPm == 1 or myEr == 1):
         filetag = "_"
         if (myEkOPm == 1 and myEr != 1):
@@ -384,15 +72,15 @@ if myfdip == 0:
         aubertOutName  = "./aubert2009.txt"+filetag
         christOutName  = "./dynq_mycode.data"+filetag
         christOutNameT = "./dyntq_mycode.data"+filetag
-        df, datadict = filter_table(infname="./all_LED_tave_NEW.csv",
+        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",
                                     outfname=leedsOutName, dataset="Leeds",fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
+        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
                      outfname=yadavOutName, dataset="Yadav", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./aubert2009-all.txt",
+        df, datadict = b.filter_table(infname="./aubert2009-all.txt",
                      outfname=aubertOutName, dataset="Aubert", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dynq_mycode.data",
+        df, datadict = b.filter_table(infname="./dynq_mycode.data",
                      outfname=christOutName, dataset="Christensen", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dyntq_mycode.data",
+        df, datadict = b.filter_table(infname="./dyntq_mycode.data",
                      outfname=christOutNameT, dataset="ChristensenT", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
         leedsname = leedsOutName
         yadavname = yadavOutName
@@ -420,15 +108,15 @@ elif myfdip == 1:
         aubertOutName  = "./aubert2009050.txt"+filetag
         christOutName  = "./dynq_mycode.data_fdip50"+filetag
         christOutNameT = "./dyntq_mycode.data_fdip50"+filetag
-        df, datadict = filter_table(infname="./all_LED_tave_NEW_fdip50.csv",         
+        df, datadict = b.filter_table(infname="./all_LED_tave_NEW_fdip50.csv",         
                      outfname=leedsOutName, dataset="Leeds", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./Yadav_etal_pnas_16_data.xls_dipolar",
+        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_dipolar",
                      outfname=yadavOutName, dataset="Yadav", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./aubert2009050.txt",
+        df, datadict = b.filter_table(infname="./aubert2009050.txt",
                      outfname=aubertOutName, dataset="Aubert", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dynq_mycode.data_fdip50",
+        df, datadict = b.filter_table(infname="./dynq_mycode.data_fdip50",
                      outfname=christOutName, dataset="Christensen", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dyntq_mycode.data_fdip50", 
+        df, datadict = b.filter_table(infname="./dyntq_mycode.data_fdip50", 
                      outfname=christOutNameT, dataset="ChristensenT", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
         leedsname = leedsOutName
         yadavname = yadavOutName
@@ -457,22 +145,22 @@ elif myfdip == 2:
         aubertOutName  += filetag
         christOutName  += filetag
         christOutNameT += filetag
-        df, datadict = filter_table(infname="./all_LED_tave_NEW.csv",
+        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",
                      outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
+        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
                      outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./aubert2009-all.txt",
+        df, datadict = b.filter_table(infname="./aubert2009-all.txt",
                      outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dynq_mycode.data",
+        df, datadict = b.filter_table(infname="./dynq_mycode.data",
                      outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dyntq_mycode.data",
+        df, datadict = b.filter_table(infname="./dyntq_mycode.data",
                      outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
     else:
-        df, datadict = filter_table(infname="./all_LED_tave_NEW.csv",            outfname=leedsOutName,   dataset="Leeds",        fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./Yadav_etal_pnas_16_data.xls_all", outfname=yadavOutName,   dataset="Yadav",        fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./aubert2009-all.txt",              outfname=aubertOutName,  dataset="Aubert",       fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./dynq_mycode.data",                outfname=christOutName,  dataset="Christensen",  fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./dyntq_mycode.data",               outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",            outfname=leedsOutName,   dataset="Leeds",        fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all", outfname=yadavOutName,   dataset="Yadav",        fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./aubert2009-all.txt",              outfname=aubertOutName,  dataset="Aubert",       fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./dynq_mycode.data",                outfname=christOutName,  dataset="Christensen",  fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./dyntq_mycode.data",               outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], datadict=datadict)
         EkOPm_range = None
         EMoEK_range = None
     leedsname = leedsOutName
@@ -502,22 +190,22 @@ elif myfdip == 3:
         aubertOutName  += filetag
         christOutName  += filetag
         christOutNameT += filetag
-        df, datadict = filter_table(infname="./all_LED_tave_NEW.csv",
+        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",
                      outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
+        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
                      outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./aubert2009-all.txt",
+        df, datadict = b.filter_table(infname="./aubert2009-all.txt",
                      outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dynq_mycode.data", 
+        df, datadict = b.filter_table(infname="./dynq_mycode.data", 
                      outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = filter_table(infname="./dyntq_mycode.data",
+        df, datadict = b.filter_table(infname="./dyntq_mycode.data",
                      outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
     else:
-        df, datadict = filter_table(infname="./all_LED_tave_NEW.csv", outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./Yadav_etal_pnas_16_data.xls_all", outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./aubert2009-all.txt", outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./dynq_mycode.data", outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = filter_table(infname="./dyntq_mycode.data", outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv", outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all", outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./aubert2009-all.txt", outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./dynq_mycode.data", outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], datadict=datadict)
+        df, datadict = b.filter_table(infname="./dyntq_mycode.data", outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], datadict=datadict)
         EkOPm_range = None
         EMoEK_range = None
     leedsname = leedsOutName
@@ -531,15 +219,15 @@ else:
 
 # Get fdip values and store in separate variables
 if datadict["L"]:
-    fdipC   = get_fdip(infname=leedsname, dataset="Leeds")
+    fdipC   = b.get_fdip(infname=leedsname, dataset="Leeds")
 if datadict["Y"]:
-    fdipY   = get_fdip(infname=yadavname, dataset="Yadav")
+    fdipY   = b.get_fdip(infname=yadavname, dataset="Yadav")
 if datadict["A"]:
-    fdipA   = get_fdip(infname=aubertname, dataset="Aubert")
+    fdipA   = b.get_fdip(infname=aubertname, dataset="Aubert")
 if datadict["UC"]:
-    fdipUC  = get_fdip(infname=christname, dataset="Christensen")
+    fdipUC  = b.get_fdip(infname=christname, dataset="Christensen")
 if datadict["UCt"]:
-    fdipUCt = get_fdip(infname=christnamet, dataset="ChristensenT")
+    fdipUCt = b.get_fdip(infname=christnamet, dataset="ChristensenT")
 
 if myfohm == 1:
     fohmn = "1"
@@ -586,9 +274,9 @@ if datadict["UC"]:
         fohmUC = np.ones(len(fohmUC)) 
     bdipUC    = LeUC/LeUCdipcmb
     nsimsUC   = len(PUC)
-    ssrUC      , mUC      , cUC      , resUC       = fits(PUC, LeUC      , fohmUC)
-    ssrUCrmscmb, mUCrmscmb, cUCrmscmb, resUCrmscmb = fits(PUC, LeUCrmscmb, fohmUC)
-    ssrUCdipcmb, mUCdipcmb, cUCdipcmb, resUCdipcmb = fits(PUC, LeUCdipcmb, fohmUC)
+    ssrUC      , mUC      , cUC      , resUC       = b.fits(PUC, LeUC      , fohmUC)
+    ssrUCrmscmb, mUCrmscmb, cUCrmscmb, resUCrmscmb = b.fits(PUC, LeUCrmscmb, fohmUC)
+    ssrUCdipcmb, mUCdipcmb, cUCdipcmb, resUCdipcmb = b.fits(PUC, LeUCdipcmb, fohmUC)
 
     if chk == 1:
         # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
@@ -614,9 +302,9 @@ if datadict["UCt"]:
         fohmUCt = np.ones(len(fohmUCt))
     bdipUCt    = LeUCt/LeUCtdipcmb
     nsimsUCt   = len(PUCt)
-    ssrUCt      , mUCt      , cUCt      , resUCt       = fits(PUCt, LeUCt      , fohmUCt)
-    ssrUCtrmscmb, mUCtrmscmb, cUCtrmscmb, resUCtrmscmb = fits(PUCt, LeUCtrmscmb, fohmUCt)
-    ssrUCtdipcmb, mUCtdipcmb, cUCtdipcmb, resUCtdipcmb = fits(PUCt, LeUCtdipcmb, fohmUCt)
+    ssrUCt      , mUCt      , cUCt      , resUCt       = b.fits(PUCt, LeUCt      , fohmUCt)
+    ssrUCtrmscmb, mUCtrmscmb, cUCtrmscmb, resUCtrmscmb = b.fits(PUCt, LeUCtrmscmb, fohmUCt)
+    ssrUCtdipcmb, mUCtdipcmb, cUCtdipcmb, resUCtdipcmb = b.fits(PUCt, LeUCtdipcmb, fohmUCt)
 
     if chk == 1:
         # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
@@ -661,7 +349,7 @@ if datadict["L"]:
         del ax
 
     # Calculate shell volume
-    volS = np.asarray([shellVolume(ar[i]) for i in range(len(ar))])
+    volS = np.asarray([b.shellVolume(ar[i]) for i in range(len(ar))])
 
     if myfohm == 1:
         fohmC = np.ones(len(ODC))
@@ -673,9 +361,9 @@ if datadict["L"]:
     PC       = 8.0 * (EC/PmC)**3 * (VDC+ODC) / volS
     bdipC    = LeC/LeCdipcmb
     nsimsC   = len(PC)
-    ssrC      , mC      , cC      , resC       = fits(PC, LeC      , fohmC)
-    ssrCrmscmb, mCrmscmb, cCrmscmb, resCrmscmb = fits(PC, LeCrmscmb, fohmC)
-    ssrCdipcmb, mCdipcmb, cCdipcmb, resCdipcmb = fits(PC, LeCdipcmb, fohmC)
+    ssrC      , mC      , cC      , resC       = b.fits(PC, LeC      , fohmC)
+    ssrCrmscmb, mCrmscmb, cCrmscmb, resCrmscmb = b.fits(PC, LeCrmscmb, fohmC)
+    ssrCdipcmb, mCdipcmb, cCdipcmb, resCdipcmb = b.fits(PC, LeCdipcmb, fohmC)
 
 # Yadav - NOTE - he uses fixed T. Extracts E, Pm, Elasser, Elsasser_CMB, Dip_CMB, Buo_pow, Ohm_diss
 if datadict["Y"]:
@@ -688,12 +376,12 @@ if datadict["Y"]:
     LeY      = np.sqrt(ElY   *EY/PmY)
     LeYrmscmb= np.sqrt(ElCMBY*EY/PmY)
     LeYdipcmb= np.sqrt(ElCMBY*dipCMBY*EY/PmY)
-    PY       = (EY)**3 * BWY   / shellVolume(0.35)
+    PY       = (EY)**3 * BWY   / b.shellVolume(0.35)
     bdipY    = LeY/LeYdipcmb
     nsimsY   = len(PY)
-    ssrY      , mY      , cY      , resY       = fits(PY, LeY      , fohmY)
-    ssrYrmscmb, mYrmscmb, cYrmscmb, resYrmscmb = fits(PY, LeYrmscmb, fohmY)
-    ssrYdipcmb, mYdipcmb, cYdipcmb, resYdipcmb = fits(PY, LeYdipcmb, fohmY)
+    ssrY      , mY      , cY      , resY       = b.fits(PY, LeY      , fohmY)
+    ssrYrmscmb, mYrmscmb, cYrmscmb, resYrmscmb = b.fits(PY, LeYrmscmb, fohmY)
+    ssrYdipcmb, mYdipcmb, cYdipcmb, resYdipcmb = b.fits(PY, LeYdipcmb, fohmY)
 
     if chk == 1:
         # CHECK: Relate Elsasser to EM, total magnetic energy 
@@ -715,9 +403,9 @@ if datadict["A"]:
     LeArmscmb    = LeA   /(bdipA*fdipA)
     lAall = 2.0*np.pi / (dAall + 0.5) # Jeans' formula.
     nsimsA = len(PA)
-    ssrA      , mA      , cA      , resA       = fits(PA, LeA      , fohmA)
-    ssrArmscmb, mArmscmb, cArmscmb, resArmscmb = fits(PA, LeArmscmb, fohmA)
-    ssrAdipcmb, mAdipcmb, cAdipcmb, resAdipcmb = fits(PA, LeAdipcmb, fohmA)
+    ssrA      , mA      , cA      , resA       = b.fits(PA, LeA      , fohmA)
+    ssrArmscmb, mArmscmb, cArmscmb, resArmscmb = b.fits(PA, LeArmscmb, fohmA)
+    ssrAdipcmb, mAdipcmb, cAdipcmb, resAdipcmb = b.fits(PA, LeAdipcmb, fohmA)
     print('cA = ', cA, cArmscmb, cAdipcmb)
 
 # Construct datasets
@@ -796,7 +484,7 @@ print('RMS CMB (slope, 10^c, std dev c, SSR) =', mrmscmb, 10**crmscmb, resrmscmb
 print('DIP CMB (slope, 10^c, std dev c, SSR) =', mdipcmb, 10**cdipcmb, resdipcmb, ssrdipcmb)
 if calc_prefac_err:
     # - Error estimate on the prefactor for CMB dip field strength
-    c_err_dipcmb = prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**cdipcmb,mdipcmb], plot=False, quiet=False)
+    c_err_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**cdipcmb,mdipcmb], plot=False, quiet=False)
     c_sd = c_err_dipcmb[1]
     fitdipcmb_1sdp = 10**(cdipcmb+c_sd) * Pfit**mdipcmb
     fitdipcmb_1sdm = 10**(cdipcmb-c_sd) * Pfit**mdipcmb
@@ -1004,13 +692,13 @@ print('Core RMS, IMACi m=3/10=0.30', c1_imaci)
 fitimaci = 10**c1_imaci * Pfit**0.30
 # Error estimate on the prefactor
 if calc_prefac_err:
-    c1_err_En = prefacError(PAall, Leall/fohmall**0.5, model=[10**c1_En,1/3.], plot=False, quiet=False)
+    c1_err_En = b.prefacError(PAall, Leall/fohmall**0.5, model=[10**c1_En,1/3.], plot=False, quiet=False)
     c1_sd_En = c1_err_En[1]
     fitEn_1sdp = 10**(c1_En+c1_sd_En) * Pfit**(1/3.)
     fitEn_1sdm = 10**(c1_En-c1_sd_En) * Pfit**(1/3.)
     fitEn_3sdp = 10**(c1_En+3.*c1_sd_En) * Pfit**(1/3.)
     fitEn_3sdm = 10**(c1_En-3.*c1_sd_En) * Pfit**(1/3.)
-    c1_err_mac = prefacError(PAall, Leall/fohmall**0.5, model=[10**c1_mac,0.25], plot=False, quiet=False)
+    c1_err_mac = b.prefacError(PAall, Leall/fohmall**0.5, model=[10**c1_mac,0.25], plot=False, quiet=False)
     c1_sd_mac = c1_err_mac[1]
     fitmac_1sdp = 10**(c1_mac+c1_sd_mac) * Pfit**0.25
     fitmac_1sdm = 10**(c1_mac-c1_sd_mac) * Pfit**0.25
@@ -1018,8 +706,8 @@ if calc_prefac_err:
     fitmac_3sdm = 10**(c1_mac-3.*c1_sd_mac) * Pfit**0.25
 
 # Get plot properties
-idxIMA = idxStr(plt_extrap_scalings, "IMA")[0]
-idxMAC = idxStr(plt_extrap_scalings, "MAC")[0]
+idxIMA = b.idxStr(plt_extrap_scalings, "IMA")[0]
+idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
 
 # Brms plots
 plt.clf()
@@ -1089,7 +777,7 @@ ax.set_xscale('log')
 plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
 plt.rcParams["figure.figsize"] = [15,10]
 
-title_str = getPlotTitle(myfdip=myfdip,
+title_str = b.getPlotTitle(myfdip=myfdip,
             myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
 plt.title(title_str)
 
@@ -1228,7 +916,7 @@ print('DIP CMB, IMACi m=3/10=0.30', c1_imaci_dipcmb)
 
 # Error estimate on the prefactor
 if calc_prefac_err:
-    c1_err_En_dipcmb = prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_En_dipcmb,1/3.], plot=False, quiet=False)
+    c1_err_En_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_En_dipcmb,1/3.], plot=False, quiet=False)
     c1_sd_En_dipcmb = c1_err_En_dipcmb[1]
     fitEn_1sdp = 10**(c1_En_dipcmb+c1_sd_En_dipcmb) * Pfit**(1/3.)
     fitEn_1sdm = 10**(c1_En_dipcmb-c1_sd_En_dipcmb) * Pfit**(1/3.)
@@ -1236,17 +924,17 @@ if calc_prefac_err:
     fitEn_3sdm = 10**(c1_En_dipcmb-3.*c1_sd_En_dipcmb) * Pfit**(1/3.)
     fitEn_5sdp = 10**(c1_En_dipcmb+5.*c1_sd_En_dipcmb) * Pfit**(1/3.)
     fitEn_5sdm = 10**(c1_En_dipcmb-5.*c1_sd_En_dipcmb) * Pfit**(1/3.)
-    c1_err_mac_dipcmb = prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_mac_dipcmb,0.25], plot=False, quiet=False)
+    c1_err_mac_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_mac_dipcmb,0.25], plot=False, quiet=False)
     c1_sd_mac_dipcmb = c1_err_mac_dipcmb[1]
     fitmac_1sdp = 10**(c1_mac_dipcmb+c1_sd_mac_dipcmb) * Pfit**0.25
     fitmac_1sdm = 10**(c1_mac_dipcmb-c1_sd_mac_dipcmb) * Pfit**0.25
     fitmac_3sdp = 10**(c1_mac_dipcmb+3.*c1_sd_mac_dipcmb) * Pfit**0.25
     fitmac_3sdm = 10**(c1_mac_dipcmb-3.*c1_sd_mac_dipcmb) * Pfit**0.25
-    c1_err_imac_dipcmb = prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_imac_dipcmb,0.40], plot=False, quiet=False)
+    c1_err_imac_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_imac_dipcmb,0.40], plot=False, quiet=False)
     c1_sd_imac_dipcmb = c1_err_imac_dipcmb[1]
-    c1_err_imacd_dipcmb = prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_imacd_dipcmb,0.20], plot=False, quiet=False)
+    c1_err_imacd_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_imacd_dipcmb,0.20], plot=False, quiet=False)
     c1_sd_imacd_dipcmb = c1_err_imacd_dipcmb[1]
-    c1_err_imaci_dipcmb = prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_imaci_dipcmb,0.30], plot=False, quiet=False)
+    c1_err_imaci_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**c1_imaci_dipcmb,0.30], plot=False, quiet=False)
     c1_sd_imaci_dipcmb = c1_err_imaci_dipcmb[1]
 
 # Store pre-factors in output file
@@ -1369,7 +1057,7 @@ ax.set_xscale('log')
 plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.1), loc=3, ncol=2, borderaxespad=0)
 plt.rcParams["figure.figsize"] = [15,10]
 
-title_str = getPlotTitle(myfdip=myfdip,
+title_str = b.getPlotTitle(myfdip=myfdip,
             myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
 plt.title(title_str)
 
