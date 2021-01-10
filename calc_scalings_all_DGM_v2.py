@@ -47,16 +47,17 @@ plt_bdip = False
 # ------------------------
 
 # Logical values for plotting datasets
-datadict = {"L":True, "A":True, "Y":True, "UC":True, "UCt":True, "A17":True}
-
-leedsname = "./all_LED_tave_NEW.csv"
-yadavname = "./Yadav_etal_pnas_16_data.xls_all"
-aubertname= "./aubert2009-all.txt"
-christname= "./dynq_mycode.data"
-christnamet="./dyntq_mycode.data"
+datadict = {"L":True, "A":True, "Y":True, "UC":True, "UCt":True, "A17":True, "APath":{'YN':True, 'data':None}, "S":{'YN':True, 'data':None}}
 
 if myfdip == 0:
     fdipn = "0"
+    leedsname = "./all_LED_tave_NEW.csv"
+    yadavname = "./Yadav_etal_pnas_16_data.xls_all"
+    aubertname= "./aubert2009-all.txt"
+    christname= "./dynq_mycode.data"
+    christnamet="./dyntq_mycode.data"
+    APathname = "./A17_all"
+    Sname     = "./S19_data"
 
     if (myEkOPm == 1 or myEr == 1):
         filetag = "_"
@@ -72,21 +73,29 @@ if myfdip == 0:
         aubertOutName  = "./aubert2009.txt"+filetag
         christOutName  = "./dynq_mycode.data"+filetag
         christOutNameT = "./dyntq_mycode.data"+filetag
-        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",
-                                    outfname=leedsOutName, dataset="Leeds",fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
-                     outfname=yadavOutName, dataset="Yadav", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./aubert2009-all.txt",
-                     outfname=aubertOutName, dataset="Aubert", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dynq_mycode.data",
-                     outfname=christOutName, dataset="Christensen", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dyntq_mycode.data",
-                     outfname=christOutNameT, dataset="ChristensenT", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        APathOutName   = APathname+filetag
+        SOutName       = APathname+filetag
+
+        df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsOutName, dataset="Leeds", fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavOutName, dataset="Yadav", fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        df, datadict = b.filter_table(infname=aubertname ,outfname=aubertOutName, dataset="Aubert", fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        df, datadict = b.filter_table(infname=christname ,outfname=christOutName, dataset="Christensen", fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        df, datadict = b.filter_table(infname=christnamet,outfname=christOutNameT, dataset="ChristensenT", fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        df, datadict = b.filter_table(infname=APathname,  outfname=APathOutName, dataset="APath",fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+        df, datadict = b.filter_table(infname=Sname    ,  outfname=SOutName    , dataset="S"    ,fdip_range=[0.,1.1], 
+                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
         leedsname = leedsOutName
         yadavname = yadavOutName
         aubertname = aubertOutName
         christname = christOutName
         christnamet = christOutNameT
+        APathname = APathOutName
 
 elif myfdip == 1: 
     fdipn = "1"
@@ -254,10 +263,49 @@ if (myEr == 1):
 outfname += ".txt"
 outfnamepf += ".txt"
 
-# Get Lhuillier values
-#t0, bdip035, fdip035, PA035, fohmA035 = np.loadtxt("lhuillier2019", usecols=(6,8,9,12,13), skiprows=0, unpack='true')
-#LeA   , bdipall, fdipall, PA   , fohmA    = np.loadtxt("aubert2009-all.txt", usecols=(7,8,9,12,13), skiprows=0, unpack='true')
-#LeLh = 0.01*t0
+
+if datadict['APath']['YN']:
+    fohmAP   = datadict["APath"]['data']['fohm']
+    PAP   = datadict["APath"]['data']['p']
+    EAP   = datadict["APath"]['data']['E']
+    PmAP  = datadict["APath"]['data']['Pm']
+    ElsAP = datadict["APath"]['data']['rmsCMBtotal']
+    Els12 = datadict["APath"]['data']['RMSCMBl=12']
+    Els1  = datadict["APath"]['data']['RMSCMBl=1']
+
+    datadict["APath"]['rmsINT'] = {}
+    datadict["APath"]['rmsCMB'] = {}
+    datadict["APath"]['dipCMB'] = {}
+
+    datadict["APath"]['rmsINT']['Le'] = np.sqrt( (EAP/PmAP) ) * ElsAP
+    datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (EAP/PmAP) ) * Els12
+    datadict["APath"]['dipCMB']['Le'] = np.sqrt( (EAP/PmAP) ) * Els1
+
+    datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = b.fits(PAP, datadict["APath"]['rmsINT']['Le'], fohmAP)
+    datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = b.fits(PAP, datadict["APath"]['rmsCMB']['Le'], fohmAP)
+    datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = b.fits(PAP, datadict["APath"]['dipCMB']['Le'], fohmAP)
+
+if datadict['S']['YN']:
+    fohmAP   = datadict["S"]['data']['fohm']
+    PAP   = datadict["S"]['data']['p']
+    EAP   = datadict["S"]['data']['E']
+    PmAP  = datadict["S"]['data']['Pm']
+    ElsAP = datadict["S"]['data']['rmsCMBtotal']
+    Els1  = datadict["S"]['data']['RMSCMBl=1']
+
+    datadict["S"]['rmsINT'] = {}
+    datadict["S"]['rmsCMB'] = {}
+    datadict["S"]['dipCMB'] = {}
+    
+    print(datadict["S"]['data']['p'])
+    print(datadict["S"]['data']['fohm'])
+
+    datadict["S"]['rmsINT']['Le'] = np.sqrt( (EAP/PmAP) ) * ElsAP
+    datadict["S"]['dipCMB']['Le'] = np.sqrt( (EAP/PmAP) ) * Els1
+
+    datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = b.fits(PAP, datadict["S"]['rmsINT']['Le'], fohmAP)
+    datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = b.fits(PAP, datadict["S"]['dipCMB']['Le'], fohmAP)
+
 
 # Christensen
 # Ek has no factor 2
@@ -419,6 +467,9 @@ Ledipcmb= LeYdipcmb
 PAall   = PY
 fohmall = fohmY
 bdipall = bdipY
+
+# cd - NEEDS TO BE A LOOP OVER ENTRIES IN DATADICT
+
 if datadict["A"]:
     Rmall   = np.concatenate((Rmall,RmA))
     Eall    = np.concatenate((Eall,EA))
@@ -455,14 +506,7 @@ if datadict["UCt"]:
     PAall   = np.concatenate((PAall,PUCt))
     fohmall = np.concatenate((fohmall,fohmUCt))
     bdipall = np.concatenate((bdipall,bdipUCt))
-#Rmall   = np.concatenate((RmA      , RmC      , RmY      , RmUC      , RmUCt))
-#Eall    = np.concatenate((EA       , EC       , EY       , EUC       , EUCt))
-#Leall   = np.concatenate((LeA      , LeC      , LeY      , LeUC      , LeUCt))
-#Lermscmb= np.concatenate((LeArmscmb, LeCrmscmb, LeYrmscmb, LeUCrmscmb, LeUCtrmscmb))
-#Ledipcmb= np.concatenate((LeAdipcmb, LeCdipcmb, LeYdipcmb, LeUCdipcmb, LeUCtdipcmb))
-#PAall   = np.concatenate((PA       , PC       , PY       , PUC       , PUCt))
-#fohmall = np.concatenate((fohmA    , fohmC    , fohmY    , fohmUC    , fohmUCt))
-#bdipall = np.concatenate((bdipA    , bdipC    , bdipY    , bdipUC    , bdipUCt))
+
 # Fits
 xmin = 1e-14
 xmax = 1e-3
@@ -690,6 +734,7 @@ fitimacd = 10**c1_imacd * Pfit**0.20
 c1_imaci = np.mean(np.log10(Leall/fohmall**0.5) - 0.30*np.log10(PAall))
 print('Core RMS, IMACi m=3/10=0.30', c1_imaci)
 fitimaci = 10**c1_imaci * Pfit**0.30
+
 # Error estimate on the prefactor
 if calc_prefac_err:
     c1_err_En = b.prefacError(PAall, Leall/fohmall**0.5, model=[10**c1_En,1/3.], plot=False, quiet=False)
@@ -709,7 +754,9 @@ if calc_prefac_err:
 idxIMA = b.idxStr(plt_extrap_scalings, "IMA")[0]
 idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
 
+##########################
 # Brms plots
+##########################
 plt.clf()
 ax  = plt.gca()
 plt.xlim([xmin,xmax])
@@ -764,7 +811,9 @@ if datadict["UC"]:
     plt.text(legend_xpos, 0.80, "$m$v = "+str(np.round(mUC,2))+"$\pm$"+str(np.round(resUC,2))+", SSR="+str(np.round(ssrUC[0],2)), transform=ax.transAxes, color='purple')
 if datadict["UCt"]:
     plt.text(legend_xpos, 0.75, "$m$^ = "+str(np.round(mUCt,2))+"$\pm$"+str(np.round(resUCt,2))+", SSR="+str(np.round(ssrUCt[0],2)), transform=ax.transAxes, color='purple')
-plt.text(legend_xpos, 0.70, "$m$  = "+str(np.round(mall,2))+"$\pm$"+str(np.round(resall,2))+", SSR="+str(np.round(ssrall[0],2)), transform=ax.transAxes, color='black')
+
+
+plt.text(legend_xpos, 0.65, "$m$  = "+str(np.round(mall,2))+"$\pm$"+str(np.round(resall,2))+", SSR="+str(np.round(ssrall[0],2)), transform=ax.transAxes, color='black')
 cbar = plt.colorbar()
 cbar.set_label("log $Re$")
 plt.xlabel('$p_A$')
@@ -811,7 +860,10 @@ c1_imaci_rmscmb = np.mean(np.log10(Lermscmb/fohmall**0.5) - 0.30*np.log10(PAall)
 print('CMB RMS, IMACi m=3/10=0.30', c1_imaci_rmscmb)
 fitimaci = 10**c1_imaci_rmscmb * Pfit**0.30
 
+##########################
 # Brms cmb plots
+##########################
+
 plt.clf()
 ax  = plt.gca()
 plt.xlim([xmin,xmax])
@@ -831,6 +883,15 @@ if datadict["UC"]:
 if datadict["UCt"]:
     plt.scatter(PUCt,LeUCtrmscmb/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),
                 edgecolor='purple',label="Christensen FF")
+if datadict["APath"]['YN']:
+    plt.scatter(datadict["APath"]['data']['p'],datadict["APath"]['rmsINT']['Le']/datadict["APath"]['data']['fohm']*0.5,
+                s=150,marker=".",c=np.log10(datadict["APath"]['data']['Rm']/datadict["APath"]['data']['Pm']),
+                vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Greens"),edgecolor='green',label="A17,A19")
+if datadict["S"]['YN']:
+    plt.scatter(datadict["S"]['data']['p'],datadict["S"]['rmsINT']['Le']/datadict["S"]['data']['fohm']*0.5,
+                s=150,marker=".",c=np.log10(datadict["S"]['data']['Rm']/datadict["S"]['data']['Pm']),
+                vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("twilight_r"),edgecolor='pink',label="S19")
+
 plt.loglog(Pfit ,fitrmscmb, color="black")
 if "IMAC" in plt_extrap_scalings:
     plt.loglog(Pfit, fitimac,   color="dimgrey"  , linestyle="--", label="$m=2/5$ (IMAC)")
@@ -862,7 +923,14 @@ if datadict["UC"]:
 if datadict["UCt"]:
     plt.text(legend_xpos, 0.75, "$m$^ = "+str(np.round(mUCtrmscmb,2))+"$\pm$"+str(np.round(resUCtrmscmb,2))+", SSR="+str(np.round(ssrUCtrmscmb[0],2)),
              transform=ax.transAxes, color='purple')
-plt.text(legend_xpos, 0.70, "$m$  = "+str(np.round(mrmscmb,2))+"$\pm$"+str(np.round(resrmscmb,2))+", SSR="+str(np.round(ssrrmscmb[0],2)),
+if datadict["APath"]['YN']:
+    plt.text(legend_xpos, 0.70, "$m$^ = "+str(np.round(datadict["APath"]['rmsINT']['m'],2))+"$\pm$"+str(np.round(datadict["APath"]['rmsINT']['res'],2))+
+             ", SSR="+str(np.round(datadict["APath"]['rmsINT']['ssr'][0],2)), transform=ax.transAxes, color='green')
+if datadict["S"]['YN']:
+    plt.text(legend_xpos, 0.65, "$m$^ = "+str(np.round(datadict["S"]['rmsINT']['m'],2))+"$\pm$"+str(np.round(datadict["S"]['rmsINT']['res'],2))+
+             ", SSR="+str(np.round(datadict["S"]['rmsINT']['ssr'][0],2)), transform=ax.transAxes, color='blue')
+    
+plt.text(legend_xpos, 0.60, "$m$  = "+str(np.round(mrmscmb,2))+"$\pm$"+str(np.round(resrmscmb,2))+", SSR="+str(np.round(ssrrmscmb[0],2)),
          transform=ax.transAxes, color='black')
 cbar = plt.colorbar()
 cbar.set_label("log $Re$")

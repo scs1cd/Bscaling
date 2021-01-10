@@ -209,6 +209,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
                      'fdip':fdip,'lbar':lbar,'tauDiss':tauDiss,'p':p,'fohm':fohm}
         # Create dataframe
         df = pd.DataFrame(data_dict, columns=cols_names)
+        
         if filter_fdip:
             mask_fdip = (df['fdip'] > fdip_min) & (df['fdip'] < fdip_max)
             new_df = df[mask_fdip]
@@ -310,6 +311,44 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["UCt"] = False
             print("\nNot plotting UCt dataset!\n")
         datadict["nUCt"] = nsims
+    # -------------------------
+    # - Aubert 2017 and 2019 simulations
+    # -------------------------        
+    elif dataset == "APath":
+        cols_names = ['eps','E','rmsCMBtotal','RMSCMBl=12','RMSCMBl=1','p','Rm','Pm','fohm']
+        
+        eps,E,rmsCMBtotal,RMSCMBl12,RMSCMBl1,p,Rm,Pm,fohm = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=5, unpack='true')
+        # Create data dictionary
+        data_dict = {'eps':eps,'E':E,'rmsCMBtotal':rmsCMBtotal,'RMSCMBl=12':RMSCMBl12,'RMSCMBl=1':RMSCMBl1,'p':p,'Rm':Rm,'Pm':Pm,'fohm':fohm}
+        # Create dataframe
+        df = pd.DataFrame(data_dict, columns=cols_names)
+
+        new_df = df
+        nsims = len(new_df['E'].values)
+        if (nsims<2):
+            datadict["APath"] = False
+            print("\nNot plotting UC dataset!\n")
+        datadict["APath"]['YN'] = nsims 
+        datadict["APath"]['data'] = df        
+        # -------------------------
+    # Schwaiger 2019
+    # -------------------------        
+    elif dataset == "S":
+        cols_names = ['E','Pm','rmsCMBtotal','RMSCMBl=1','fdip1','fdip2','p','Rm','fohm']
+        
+        E,Pm,rmsCMBtotal,RMSCMBl1,fdip1,fdip2,p,Rm,fohm = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=0, unpack='true')
+        # Create data dictionary
+        data_dict = {'E':E,'Pm':Pm,'rmsCMBtotal':rmsCMBtotal,'RMSCMBl=1':RMSCMBl1,'fdip1':fdip1,'fdip2':fdip2,'p':p,'Rm':Rm,'fohm':fohm}
+        # Create dataframe
+        df = pd.DataFrame(data_dict, columns=cols_names)
+
+        new_df = df
+        nsims = len(new_df['E'].values)
+        if (nsims<2):
+            datadict["APath"] = False
+            print("\nNot plotting UC dataset!\n")
+        datadict["S"]['YN'] = nsims 
+        datadict["S"]['data'] = df        
     else:
         raise ValueError("Not valid dataset")
 
@@ -329,3 +368,91 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         print('Number of models in dataset (original, filtered) = %s %s' %(len(df),len(new_df)))
  
     return new_df, datadict
+
+#def plot(x, datadict):
+    
+#     xmin, xmax, ymin, ymax = x[0], x[1], x[2], x[3]
+    
+#     plt.clf()
+#     ax  = plt.gca()
+#     plt.xlim([xmin,xmax])
+#     plt.ylim([3e-5,0.2])
+#     if datadict["A"]:
+#         plt.scatter(PA  ,LeA/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),edgecolor='orange',label="Aubert et al (2009)")
+# if datadict["Y"]:
+#     plt.scatter(PY  ,LeY/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds")   ,edgecolor='red'   ,label="Yadav et al (2016)")
+# if datadict["L"]:
+#     plt.scatter(PC  ,LeC/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
+# if datadict["UC"]:
+#     plt.scatter(PUC ,LeUC /fohmUC**0.5, s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
+# if datadict["UCt"]:
+#     plt.scatter(PUCt,LeUCt/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
+# plt.loglog(Pfit, fitall, color="black", lw=lw_fit)
+# if "IMAC" in plt_extrap_scalings:
+#     plt.loglog(Pfit, fitimac, color="dimgrey"  ,linestyle="--", lw=lw_fit, label="$m=2/5$ (IMAC)")
+# if "IMACd" in plt_extrap_scalings:
+#     plt.loglog(Pfit, fitimacd, color="dimgrey"  ,linestyle="-.", lw=lw_fit, label="$m=1/5$ (IMACd)")
+# if "IMACi" in plt_extrap_scalings:
+#     plt.loglog(Pfit, fitimaci, color="dimgrey"  ,linestyle=":", lw=lw_fit, label="$m=3/10$ (IMACi)")
+# if "IMA" in plt_extrap_scalings:
+#     if (calc_prefac_err):
+#         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit,
+#                    label="$m=1/3$ (QG-MAC), $\sigma=$"+str(np.round(c1_sd_En,3)))
+#         plt.fill_between(Pfit, fitEn_1sdm, fitEn_1sdp, color=sc_fit[idxIMA], alpha=sc_alpha, zorder=-1)
+#     else:
+#         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit, label="$m=1/3$ (QG-MAC)")
+
+# if "MAC" in plt_extrap_scalings:
+#     if (calc_prefac_err):
+#         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit,
+#                    label="$m=1/4$ (MAC), $\sigma=$"+str(np.round(c1_sd_mac,3)))
+#         plt.fill_between(Pfit, fitmac_1sdm, fitmac_1sdp, color=sc_fit[idxMAC], alpha=sc_alpha, zorder=-1)
+#         plt.loglog(Pfit, fitmac_3sdm, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
+#         plt.loglog(Pfit, fitmac_3sdp, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
+#     else:
+#         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit, label="$m=1/4$ (MAC)")
+
+
+# ax.add_patch(Rectangle(xy=(P_earth_min,Le_earth_rmsmin) ,width=(P_earth_max-P_earth_min), height=(Le_earth_rmsmax-Le_earth_rmsmin),
+#                        linewidth=1, color='black', fill=True))
+
+# legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
+# if datadict["A"]:
+#     plt.text(legend_xpos, 0.95, "$m$  = "+str(np.round(mA,2)) +"$\pm$"+str(np.round(resA,2)) +", SSR="+str(np.round(ssrA[0],2)), transform=ax.transAxes, color='orange')
+# if datadict["Y"]:
+#     plt.text(legend_xpos, 0.90, "$m$  = "+str(np.round(mY,2)) +"$\pm$"+str(np.round(resY,2)) +", SSR="+str(np.round(ssrY[0],2)), transform=ax.transAxes, color='red')
+# if datadict["L"]:
+#     plt.text(legend_xpos, 0.85, "$m$  = "+str(np.round(mC,2)) +"$\pm$"+str(np.round(resC,2)) +", SSR="+str(np.round(ssrC[0],2)), transform=ax.transAxes, color='blue')
+# if datadict["UC"]:
+#     plt.text(legend_xpos, 0.80, "$m$v = "+str(np.round(mUC,2))+"$\pm$"+str(np.round(resUC,2))+", SSR="+str(np.round(ssrUC[0],2)), transform=ax.transAxes, color='purple')
+# if datadict["UCt"]:
+#     plt.text(legend_xpos, 0.75, "$m$^ = "+str(np.round(mUCt,2))+"$\pm$"+str(np.round(resUCt,2))+", SSR="+str(np.round(ssrUCt[0],2)), transform=ax.transAxes, color='purple')
+# plt.text(legend_xpos, 0.70, "$m$  = "+str(np.round(mall,2))+"$\pm$"+str(np.round(resall,2))+", SSR="+str(np.round(ssrall[0],2)), transform=ax.transAxes, color='black')
+# cbar = plt.colorbar()
+# cbar.set_label("log $Re$")
+# plt.xlabel('$p_A$')
+# if myfohm == 0: 
+#     plt.ylabel('$Le^{\\rm rms}_t/f_{ohm}^{1/2}$')
+# elif myfohm == 1: 
+#     plt.ylabel('$Le^{\\rm rms}_t$')
+# ax.set_yscale('log')
+# ax.set_xscale('log')
+# plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
+# plt.rcParams["figure.figsize"] = [15,10]
+
+# title_str = b.getPlotTitle(myfdip=myfdip,
+#             myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
+# plt.title(title_str)
+
+# file2 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
+# file3 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
+# if (myEkOPm == 1):
+#     file2 += "_" + EkOPm_tag
+#     file3 += "_" + EkOPm_tag
+# if (myEr == 1):
+#     file2 += "_" + EMoEK_tag
+#     file3 += "_" + EMoEK_tag
+# file2 += ".pdf"
+# file3 += ".png"
+# plt.savefig(file2, format='pdf',bbox_inches="tight")
+# plt.savefig(file3, format='png',bbox_inches="tight")
