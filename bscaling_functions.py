@@ -8,6 +8,8 @@ Created on Sat Jan  9 16:15:55 2021
 import numpy as np
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 
 def idxStr(l1, s):
     idx = []
@@ -18,6 +20,137 @@ def idxStr(l1, s):
             idx.append(i)
         i += 1
     return idx
+
+def getEarthEstimates(quiet=True):
+    # Brmax = (a/r)^3 g10
+    ri    = 1221e3
+    rc    = 3480e3
+    rsurf = 6371e3
+    omega = 7.272e-5
+    dd    = rc-ri
+    rho   = 1e4
+    mu0   = 4.*np.pi*1.e-7
+
+    # Min and max CMB dipole field strengths for Earth: 20,000 nT and 40,000 nT
+    Le_earth_dipmin = 20000e-9 * np.sqrt(2.) * (rsurf/rc)**3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
+    Le_earth_dipmax = 40000e-9 * np.sqrt(2.) * (rsurf/rc)**3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
+    # Min and max core field strengths for Earth: 1 mT and 10 mT
+    Le_earth_rmsmin = 1e-3  / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
+    Le_earth_rmsmax = 10e-3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
+    # Min and max CMB field strengths for Earth: 0.5 mT and 1 mT
+    Le_earth_rmscmbmin = 0.5e-3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
+    Le_earth_rmscmbmax = 1e-3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
+    if not quiet:
+        print('Le_earth CMB dipole min/max  = ', Le_earth_dipmin, Le_earth_dipmax)
+        print('Le_earth Surf dipole min/max = ', Le_earth_dipmin/(rsurf/rc)**3, Le_earth_dipmax/(rsurf/rc)**3)
+        print('Le_earth RMS total  min/max  = ', Le_earth_rmsmin, Le_earth_rmsmax)
+        print('Le_earth RMS CMB  min/max    = ', Le_earth_rmscmbmin, Le_earth_rmscmbmax)
+        # Min buoyancy pow for Earth: 0.1 TW
+    P_earth_min = 1e11 * 3. / (4*np.pi*(rc**3-ri**3)) / rho / omega**3 / dd**2
+    # Max buoyancy pow for Earth: 5 TW
+    P_earth_max = 5e12 * 3. / (4*np.pi*(rc**3-ri**3)) / rho / omega**3 / dd**2
+    if not quiet:
+        print('Power min/max = ', P_earth_min, P_earth_max)
+
+    return Le_earth_dipmin, Le_earth_dipmax, Le_earth_rmsmin, Le_earth_rmsmax, Le_earth_rmscmbmin, Le_earth_rmscmbmax, P_earth_min, P_earth_max
+  
+def getPlotProperties(datadict):
+    for key in datadict:
+        if datadict[key]["plot"]:
+            datadict[key]["plotp"]["Col"] = datadict[key]["Rm"]/datadict[key]["Pm"]
+            if (datadict[key]["dataset"]=="L"):
+                datadict[key]["plotp"]["marker"] = "*"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Blues"
+                datadict[key]["plotp"]["edgecolor"] = "blue"
+                datadict[key]["plotp"]["label"] = "Leeds"
+            elif (datadict[key]["dataset"]=="A"):
+                datadict[key]["plotp"]["marker"] = "^"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Oranges"
+                datadict[key]["plotp"]["edgecolor"] = "orange"
+                datadict[key]["plotp"]["label"] = "Auber et al (2009)"
+            elif (datadict[key]["dataset"]=="UC"):
+                datadict[key]["plotp"]["marker"] = "v"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Purples"
+                datadict[key]["plotp"]["edgecolor"] = "purple"
+                datadict[key]["plotp"]["label"] = "Christensen 0F"
+            elif (datadict[key]["dataset"]=="UCt"):
+                datadict[key]["plotp"]["marker"] = "^"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Purples"
+                datadict[key]["plotp"]["edgecolor"] = "purple"
+                datadict[key]["plotp"]["label"] = "Christensen FF"
+            elif (datadict[key]["dataset"]=="Y"):
+                datadict[key]["plotp"]["marker"] = "o"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Reds"
+                datadict[key]["plotp"]["edgecolor"] = "red"
+                datadict[key]["plotp"]["label"] = "Yadav et al (2010)"
+            elif (datadict[key]["dataset"]=="A17"):
+                print("Symbol properties to be chosen")
+            elif (datadict[key]["dataset"]=="APath"):
+                print("Symbol properties to be chosen")
+            elif (datadict[key]["dataset"]=="S"):
+                print("Symbol properties to be chosen")
+            else:
+                raise ValueError("Not valid dataset")
+
+    return datadict
+
+def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsINT",
+                    xrange=[0.,1.], yrange=[0.,1.], cbarrange=[0.,1.]):
+
+    if field not in ("rmsINT","rmsCMB","dipCMB"):
+        raise ValueError("Not valid field provided.")
+
+    xmin = xrange[0]; xmax=xrange[1]
+    ymin = yrange[0]; ymax=yrange[1]
+    cbarmin = cbarrange[0]; cbarmax = cbarrange[1]
+
+    # Now start the plot
+    plt.clf()
+    ax  = plt.gca()
+    plt.xlim([xmin,xmax])
+    plt.ylim([ymin,ymax])
+
+    for key in datadict:
+        if datadict[key]["plot"]:
+            plt.scatter(datadict[key]["p"], datadict[key][field]["Le"]/datadict[key]["fohm"]**0.5,
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=cbarmin, vmax=cbarmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"])
+
+    ax.add_patch(Rectangle(xy=(earthdict["p"]["min"],earthdict[field]["min"]),
+                           width=(earthdict["p"]["max"]-earthdict["p"]["min"]),
+                           height=(earthdict[field]["max"]-earthdict[field]["min"]),
+                           linewidth=1, color='black', fill=True))
+    legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
+    legend_ypos = 0.95; legend_dy   = 0.05
+    iplt = 0
+    for key in datadict:
+        if datadict[key]["plot"]:
+            plt.text(legend_xpos, legend_ypos-iplt*legend_dy,
+                     "$m$  = "+str(np.round(datadict[key][field]["m"],2)) +\
+                     "$\pm$"+str(np.round(datadict[key][field]["res"],2)) +\
+                     ", SSR="+str(np.round(datadict[key][field]["ssr"],2)),
+                     transform=ax.transAxes, color=datadict[key]["plotp"]["edgecolor"])
+            iplt += 1
+
+    plt.text(legend_xpos, legend_ypos-iplt*legend_dy, "$m$  = "+str(np.round(alldatadict[field]["m"],2))+\
+             "$\pm$"+str(np.round(alldatadict[field]["res"],2))+\
+             ", SSR="+str(np.round(alldatadict[field]["ssr"][0],2)), transform=ax.transAxes, color='black')
+    # Plot color bar
+    cbar = plt.colorbar()
+    cbar.set_label("log $Re$")
+
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
+    plt.rcParams["figure.figsize"] = [15,10]
+
+    return ax, legend_xpos, legend_ypos
 
 def getPlotTitle(myfdip=None, fdip_range= [None]*2, myEr=None, Er_range=[None]*2):
     title_str = ""
@@ -59,7 +192,7 @@ def fits(P, Le, fohm):
     else:
         raise ValueError("1 data point. No fit possible")
 
-    return ssr, m, c, res
+    return ssr[0], m, c, res
 
 def shellVolume(ar):
     """
@@ -107,6 +240,50 @@ def prefacError(x, y, model=[None,None], plot=False, quiet=False):
         plt.savefig('./eardme/fig/Err_distribution.pdf',format='pdf')
         del ax
     return [mean_err, sd_err]
+
+def saveFitValues(filename=None, datadict=None, alldatadict=None):
+    """
+    Store fit values in output file
+    """
+    fout = open(filename, "w")
+    delim = "     "
+    fout.write("--- B rms ---\n")
+    fout.write("Dataset            "+delim+"slope m    "+"std. err. "+" SSR\n")
+    for key in datadict:
+        if datadict[key]["plot"]:
+            fout.write(datadict[key]["plotp"]["label"]+delim+\
+                str(np.round(datadict[key]["rmsINT"]["m"],4))+delim+\
+                str(np.round(datadict[key]["rmsINT"]["res"],4))+delim+\
+                str(np.round(datadict[key]["rmsINT"]["ssr"],4))+"\n")
+    fout.write("All                "+delim+str(np.round(alldatadict["rmsINT"]["m"],4))+delim+\
+               str(np.round(alldatadict["rmsINT"]["res"],4))+delim+\
+               str(np.round(alldatadict["rmsINT"]["ssr"],4))+"\n")
+    fout.write("\n")
+    fout.write("--- B rms cmb ---\n")
+    fout.write("Dataset            "+delim+"slope m    "+"std. err. "+" SSR\n")
+    for key in datadict:
+        if datadict[key]["plot"]:
+            fout.write(datadict[key]["plotp"]["label"]+delim+\
+                str(np.round(datadict[key]["rmsCMB"]["m"],4))+delim+\
+                str(np.round(datadict[key]["rmsCMB"]["res"],4))+delim+\
+                str(np.round(datadict[key]["rmsCMB"]["ssr"],4))+"\n")
+    fout.write("All                "+delim+str(np.round(alldatadict["rmsCMB"]["m"],4))+delim+\
+               str(np.round(alldatadict["rmsCMB"]["res"],4))+delim+\
+               str(np.round(alldatadict["rmsCMB"]["ssr"],4))+"\n")
+    fout.write("\n")
+    fout.write("--- B dip cmb ---\n")
+    fout.write("Dataset            "+delim+"slope m    "+"std. err. "+" SSR\n")
+    for key in datadict:
+        if datadict[key]["plot"]:
+            fout.write(datadict[key]["plotp"]["label"]+delim+\
+                str(np.round(datadict[key]["dipCMB"]["m"],4))+delim+\
+                str(np.round(datadict[key]["dipCMB"]["res"],4))+delim+\
+                str(np.round(datadict[key]["dipCMB"]["ssr"],4))+"\n")
+    fout.write("All                "+delim+str(np.round(alldatadict["dipCMB"]["m"],4))+delim+\
+               str(np.round(alldatadict["dipCMB"]["res"],4))+delim+\
+               str(np.round(alldatadict["dipCMB"]["ssr"],4))+"\n")
+    fout.close()
+
 
 def get_fdip(infname=None, dataset="Leeds"):
     """
@@ -160,8 +337,9 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         print('\nFiltering by Ek/Pm (min,max) = %s %s' %(EkOPm_min,EkOPm_max))
         if (EkOPm_min > EkOPm_max):
             raise ValueError('Not valid range of Ek/Pm: min > max.')
-            
-    # CD - NEED AN ELSE?
+        filter_EkOPm = True
+    else:
+        filter_EkOPm = False
     if EMoEK_range is not None:
         filter_Er = True
         Er_min = EMoEK_range[0]; Er_max = EMoEK_range[1]
@@ -170,10 +348,6 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             raise ValueError('Not valid range of EM/EK: min > max.')
     else:
         filter_Er = False
-    if EkOPm_range is not None:
-        filter_EkOPm = True
-    else:
-        filter_EkOPm = False
     # -------------------
     # - Leeds simulations
     # -------------------
@@ -193,10 +367,12 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             mask_EkOPm = (new_df['Ek'].values*2./new_df['Pm'].values > EkOPm_min) & (new_df['Ek'].values*2./new_df['Pm'].values < EkOPm_max)
             new_df = new_df[mask_EkOPm]
         nsims = len(new_df['Ek'].values)
+        datadict["L"]["nsims"] = nsims
         if (nsims<2):
-            datadict["L"] = False
+            datadict["L"]["plot"] = False
             print("\nNot plotting L dataset!\n")
-        datadict["nL"] = nsims
+        datadict["L"]["d"] = new_df.to_dict("list")
+        
     # ---------------------------------
     # - Aubert et al (2009) simulations
     # ---------------------------------
@@ -222,10 +398,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
             new_df = new_df[mask_EkOPm]
         nsims = len(new_df['E'].values)
+        datadict["A"]["nsims"] = nsims
         if (nsims<2):
-            datadict["A"] = False
+            datadict["A"]["plot"] = False
             print("\nNot plotting A dataset!\n")
-        datadict["nA"] = nsims
+        datadict["A"]["d"] = new_df.to_dict("list")
     # -------------------
     # - Yadav simulations
     # -------------------
@@ -254,10 +431,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
             new_df = new_df[mask_EkOPm]
         nsims = len(new_df['E'].values)
+        datadict["Y"]["nsims"] = nsims
         if (nsims<2):
-            datadict["Y"] = False
+            datadict["Y"]["plot"] = False
             print("\nNot plotting Y dataset!\n")
-        datadict["nY"] = nsims
+        datadict["Y"]["d"] = new_df.to_dict("list")
     # -------------------------
     # - Christensen simulations
     # -------------------------
@@ -283,10 +461,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
             new_df = new_df[mask_EkOPm]
         nsims = len(new_df['E'].values)
+        datadict["UC"]["nsims"] = nsims
         if (nsims<2):
-            datadict["UC"] = False
+            datadict["UC"]["plot"] = False
             print("\nNot plotting UC dataset!\n")
-        datadict["nUC"] = nsims
+        datadict["UC"]["d"] = new_df.to_dict("list")
     # -------------------------
     # - Christensen simulations
     # -------------------------
@@ -307,10 +486,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             mask_EkOPm = (new_df['E'].values/new_df['Pm'].values > EkOPm_min) & (new_df['E'].values/new_df['Pm'].values < EkOPm_max)
             new_df = new_df[mask_EkOPm]
         nsims = len(new_df['E'].values)
+        datadict["UCt"]["nsims"] = nsims
         if (nsims<2):
-            datadict["UCt"] = False
+            datadict["UCt"]["plot"] = False
             print("\nNot plotting UCt dataset!\n")
-        datadict["nUCt"] = nsims
+        datadict["UCt"]["d"] = new_df.to_dict("list")
     # -------------------------
     # - Aubert 2017 and 2019 simulations
     # -------------------------        
@@ -326,11 +506,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         new_df = df
         nsims = len(new_df['E'].values)
         if (nsims<2):
-            datadict["APath"] = False
+            datadict["APath"]["plot"] = False
             print("\nNot plotting UC dataset!\n")
-        datadict["APath"]['YN'] = nsims 
-        datadict["APath"]['data'] = df        
-        # -------------------------
+        datadict["APath"]['nsims'] = nsims 
+        datadict["APath"]['d'] = df        
+    # -------------------------
     # Schwaiger 2019
     # -------------------------        
     elif dataset == "S":
@@ -345,10 +525,10 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         new_df = df
         nsims = len(new_df['E'].values)
         if (nsims<2):
-            datadict["APath"] = False
+            datadict["S"]["plot"] = False
             print("\nNot plotting UC dataset!\n")
-        datadict["S"]['YN'] = nsims 
-        datadict["S"]['data'] = df        
+        datadict["S"]['nsims'] = nsims 
+        datadict["S"]['d'] = df        
     else:
         raise ValueError("Not valid dataset")
 

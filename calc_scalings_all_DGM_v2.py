@@ -3,11 +3,9 @@ import pandas as pd
 import bscaling_functions as b
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.patches import Rectangle
 from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':'12'})
 rc('text', usetex=False)
-
 
 # ------------------------
 # --- Input parameters ---
@@ -46,197 +44,96 @@ plt_bdip = False
 # ------------------------
 # ------------------------
 
-# Logical values for plotting datasets
-datadict = {"L":True, "A":True, "Y":True, "UC":True, "UCt":True, "A17":True, "APath":{'YN':True, 'data':None}, "S":{'YN':True, 'data':None}}
+# Create dictionaries of datasets
+datadict = {"L":{"plot":True, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "A":{"plot":True, "dataset":"A", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "Y":{"plot":True, "dataset":"Y", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "UC":{"plot":True, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "UCt":{"plot":True, "dataset":"UCt", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "A17":{"plot":False, "dataset":"A17", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "APath":{"plot":False, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "S":{"plot":False, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
 
+alldatadict = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}
+
+earthdict = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "p":{}}
+
+# Input datasets
+leedsname = "./all_LED_tave_NEW.csv"
+yadavname = "./Yadav_etal_pnas_16_data.xls_all"
+aubertname= "./aubert2009-all.txt"
+christname= "./dynq_mycode.data"
+christnamet="./dyntq_mycode.data"
+APathname = "./A17_all"
+Sname     = "./S19_data"
+
+# fdip filtering
 if myfdip == 0:
     fdipn = "0"
-    leedsname = "./all_LED_tave_NEW.csv"
-    yadavname = "./Yadav_etal_pnas_16_data.xls_all"
-    aubertname= "./aubert2009-all.txt"
-    christname= "./dynq_mycode.data"
-    christnamet="./dyntq_mycode.data"
-    APathname = "./A17_all"
-    Sname     = "./S19_data"
-
-    if (myEkOPm == 1 or myEr == 1):
-        filetag = "_"
-        if (myEkOPm == 1 and myEr != 1):
-            filetag += "EkOPm"
-        elif (myEkOPm != 1 and myEr == 1):
-            filetag += "EMoEK"
-        elif (myEkOPm == 1 and myEr == 1):
-            filetag += "EkOPm_EMoEK"
-
-        leedsOutName   = "./all_LED_tave_NEW.csv"+filetag
-        yadavOutName   = "./Yadav_etal_pnas_16_data.xls"+filetag
-        aubertOutName  = "./aubert2009.txt"+filetag
-        christOutName  = "./dynq_mycode.data"+filetag
-        christOutNameT = "./dyntq_mycode.data"+filetag
-        APathOutName   = APathname+filetag
-        SOutName       = APathname+filetag
-
-        df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsOutName, dataset="Leeds", fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavOutName, dataset="Yadav", fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname=aubertname ,outfname=aubertOutName, dataset="Aubert", fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname=christname ,outfname=christOutName, dataset="Christensen", fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname=christnamet,outfname=christOutNameT, dataset="ChristensenT", fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname=APathname,  outfname=APathOutName, dataset="APath",fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname=Sname    ,  outfname=SOutName    , dataset="S"    ,fdip_range=[0.,1.1], 
-                                      EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        leedsname = leedsOutName
-        yadavname = yadavOutName
-        aubertname = aubertOutName
-        christname = christOutName
-        christnamet = christOutNameT
-        APathname = APathOutName
-
-elif myfdip == 1: 
+    fdip_range = [0.,1.1]
+elif myfdip == 1:
     fdipn = "1"
-    leedsname = "./all_LED_tave_NEW_fdip50.csv"
-    yadavname = "./Yadav_etal_pnas_16_data.xls_dipolar"
-    aubertname= "./aubert2009050.txt"
-    christname= "./dynq_mycode.data_fdip50"
-    christnamet="./dyntq_mycode.data_fdip50"
-    if (myEkOPm == 1 or myEr == 1):
-        filetag = "_"
-        if (myEkOPm == 1 and myEr != 1):
-            filetag += "EkOPm"
-        elif (myEkOPm != 1 and myEr == 1):
-            filetag += "EMoEK"
-        elif (myEkOPm == 1 and myEr == 1):
-            filetag += "EkOPm_EMoEK"
-        leedsOutName   = "./all_LED_tave_NEW_fdip50.csv"+filetag
-        yadavOutName   = "./Yadav_etal_pnas_16_data.xls_dipolar"+filetag
-        aubertOutName  = "./aubert2009050.txt"+filetag
-        christOutName  = "./dynq_mycode.data_fdip50"+filetag
-        christOutNameT = "./dyntq_mycode.data_fdip50"+filetag
-        df, datadict = b.filter_table(infname="./all_LED_tave_NEW_fdip50.csv",         
-                     outfname=leedsOutName, dataset="Leeds", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_dipolar",
-                     outfname=yadavOutName, dataset="Yadav", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./aubert2009050.txt",
-                     outfname=aubertOutName, dataset="Aubert", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dynq_mycode.data_fdip50",
-                     outfname=christOutName, dataset="Christensen", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dyntq_mycode.data_fdip50", 
-                     outfname=christOutNameT, dataset="ChristensenT", fdip_range=[0.,1.1], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        leedsname = leedsOutName
-        yadavname = yadavOutName
-        aubertname = aubertOutName
-        christname = christOutName
-        christnamet = christOutNameT
-
+    fdip_range = [0.50,1.1]
 elif myfdip == 2:
     fdipn = "2"
-    fdip_min = 0.35; fdip_max = 0.80
-    leedsOutName   = "./all_LED_tave_NEW.csv_fdip035-080"
-    yadavOutName   = "./Yadav_etal_pnas_16_data.xls_fdip035-080"
-    aubertOutName  = "./aubert2009.txt_fdip035-080"
-    christOutName  = "./dynq_mycode.data_fdip035-080"
-    christOutNameT = "./dyntq_mycode.data_fdip035-080"
-    if (myEkOPm == 1 or myEr == 1):
-        filetag = "_"
-        if (myEkOPm == 1 and myEr != 1):
-            filetag += "EkOPm"
-        elif (myEkOPm != 1 and myEr == 1):
-            filetag += "EMoEK"
-        elif (myEkOPm == 1 and myEr == 1):
-            filetag += "EkOPm_EMoEK"   
-        leedsOutName   += filetag
-        yadavOutName   += filetag
-        aubertOutName  += filetag
-        christOutName  += filetag
-        christOutNameT += filetag
-        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",
-                     outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
-                     outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./aubert2009-all.txt",
-                     outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dynq_mycode.data",
-                     outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dyntq_mycode.data",
-                     outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-    else:
-        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",            outfname=leedsOutName,   dataset="Leeds",        fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all", outfname=yadavOutName,   dataset="Yadav",        fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./aubert2009-all.txt",              outfname=aubertOutName,  dataset="Aubert",       fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./dynq_mycode.data",                outfname=christOutName,  dataset="Christensen",  fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./dyntq_mycode.data",               outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        EkOPm_range = None
-        EMoEK_range = None
-    leedsname = leedsOutName
-    yadavname = yadavOutName
-    aubertname = aubertOutName
-    christname = christOutName
-    christnamet = christOutNameT
-
+    fdip_range = [0.35,0.80]
 elif myfdip == 3:
     fdipn = "3"
-    fdip_min = 0.40; fdip_max = 0.80
-    leedsOutName   = "./all_LED_tave_NEW.csv_fdip040-080"
-    yadavOutName   = "./Yadav_etal_pnas_16_data.xls_fdip040-080"
-    aubertOutName  = "./aubert2009.txt_fdip040-080"
-    christOutName  = "./dynq_mycode.data_fdip040-080"
-    christOutNameT = "./dyntq_mycode.data_fdip040-080"
-    if (myEkOPm == 1 or myEr == 1):
-        filetag = "_"
-        if (myEkOPm == 1 and myEr != 1):
-            filetag += "EkOPm"
-        elif (myEkOPm != 1 and myEr == 1):
-            filetag += "EMoEK"
-        elif (myEkOPm == 1 and myEr == 1):
-            filetag += "EkOPm_EMoEK"   
-        leedsOutName   += filetag
-        yadavOutName   += filetag
-        aubertOutName  += filetag
-        christOutName  += filetag
-        christOutNameT += filetag
-        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv",
-                     outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all",
-                     outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./aubert2009-all.txt",
-                     outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dynq_mycode.data", 
-                     outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-        df, datadict = b.filter_table(infname="./dyntq_mycode.data",
-                     outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-    else:
-        df, datadict = b.filter_table(infname="./all_LED_tave_NEW.csv", outfname=leedsOutName, dataset="Leeds", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./Yadav_etal_pnas_16_data.xls_all", outfname=yadavOutName, dataset="Yadav", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./aubert2009-all.txt", outfname=aubertOutName, dataset="Aubert", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./dynq_mycode.data", outfname=christOutName, dataset="Christensen", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        df, datadict = b.filter_table(infname="./dyntq_mycode.data", outfname=christOutNameT, dataset="ChristensenT", fdip_range=[fdip_min,fdip_max], datadict=datadict)
-        EkOPm_range = None
-        EMoEK_range = None
-    leedsname = leedsOutName
-    yadavname = yadavOutName
-    aubertname = aubertOutName
-    christname = christOutName
-    christnamet = christOutNameT
-
+    fdip_range = [0.40,0.80]
 else:
-    raise ValueError('Not valid value for myfdip')
+    raise ValueError("Not valid value of myfdip provided.")
+filetag = "_fdip"+fdipn
 
-# Get fdip values and store in separate variables
-if datadict["L"]:
-    fdipC   = b.get_fdip(infname=leedsname, dataset="Leeds")
-if datadict["Y"]:
-    fdipY   = b.get_fdip(infname=yadavname, dataset="Yadav")
-if datadict["A"]:
-    fdipA   = b.get_fdip(infname=aubertname, dataset="Aubert")
-if datadict["UC"]:
-    fdipUC  = b.get_fdip(infname=christname, dataset="Christensen")
-if datadict["UCt"]:
-    fdipUCt = b.get_fdip(infname=christnamet, dataset="ChristensenT")
+# filtering by Ek/Pm and/or Emag/Ekin
+if (myEkOPm == 1 or myEr == 1):
+    if (myEkOPm == 1 and myEr != 1):
+        filetag += "_EkOPm"
+    elif (myEkOPm != 1 and myEr == 1):
+        filetag += "_EMoEK"
+    elif (myEkOPm == 1 and myEr == 1):
+        filetag += "_EkOPm_EMoEK"
+
+leedsOutName   = leedsname+filetag
+yadavOutName   = yadavname+filetag
+aubertOutName  = aubertname+filetag
+christOutName  = christname+filetag
+christOutNameT = christnamet+filetag
+APathOutName   = APathname+filetag
+SOutName       = APathname+filetag
+
+# read datasets, filter and calculate fdip
+if datadict["L"]["plot"]:
+    df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsOutName, dataset="Leeds", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+    datadict["L"]["fdip"] = b.get_fdip(infname=leedsname, dataset="Leeds")
+if datadict["Y"]["plot"]:
+    df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavOutName, dataset="Yadav", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+    datadict["Y"]["fdip"] = b.get_fdip(infname=yadavname, dataset="Yadav")
+if datadict["A"]["plot"]:
+    df, datadict = b.filter_table(infname=aubertname ,outfname=aubertOutName, dataset="Aubert", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+    datadict["A"]["fdip"] = b.get_fdip(infname=aubertname, dataset="Aubert")
+if datadict["UC"]["plot"]:
+    df, datadict = b.filter_table(infname=christname ,outfname=christOutName, dataset="Christensen", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+    datadict["UC"]["fdip"] = b.get_fdip(infname=christname, dataset="Christensen")
+if datadict["UCt"]["plot"]:
+    df, datadict = b.filter_table(infname=christnamet,outfname=christOutNameT, dataset="ChristensenT", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+    datadict["UCt"]["fdip"] = b.get_fdip(infname=christnamet, dataset="ChristensenT")
+if datadict["APath"]["plot"]:
+    df, datadict = b.filter_table(infname=APathname,  outfname=APathOutName, dataset="APath",fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+if datadict["S"]["plot"]:
+    df, datadict = b.filter_table(infname=Sname    ,  outfname=SOutName    , dataset="S"    ,fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+leedsname = leedsOutName
+yadavname = yadavOutName
+aubertname = aubertOutName
+christname = christOutName
+christnamet = christOutNameT
+APathname = APathOutName
 
 if myfohm == 1:
     fohmn = "1"
@@ -263,108 +160,8 @@ if (myEr == 1):
 outfname += ".txt"
 outfnamepf += ".txt"
 
-
-if datadict['APath']['YN']:
-    fohmAP   = datadict["APath"]['data']['fohm']
-    PAP   = datadict["APath"]['data']['p']
-    EAP   = datadict["APath"]['data']['E']
-    PmAP  = datadict["APath"]['data']['Pm']
-    ElsAP = datadict["APath"]['data']['rmsCMBtotal']
-    Els12 = datadict["APath"]['data']['RMSCMBl=12']
-    Els1  = datadict["APath"]['data']['RMSCMBl=1']
-
-    datadict["APath"]['rmsINT'] = {}
-    datadict["APath"]['rmsCMB'] = {}
-    datadict["APath"]['dipCMB'] = {}
-
-    datadict["APath"]['rmsINT']['Le'] = np.sqrt( (EAP/PmAP) ) * ElsAP
-    datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (EAP/PmAP) ) * Els12
-    datadict["APath"]['dipCMB']['Le'] = np.sqrt( (EAP/PmAP) ) * Els1
-
-    datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = b.fits(PAP, datadict["APath"]['rmsINT']['Le'], fohmAP)
-    datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = b.fits(PAP, datadict["APath"]['rmsCMB']['Le'], fohmAP)
-    datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = b.fits(PAP, datadict["APath"]['dipCMB']['Le'], fohmAP)
-
-if datadict['S']['YN']:
-    fohmAP   = datadict["S"]['data']['fohm']
-    PAP   = datadict["S"]['data']['p']
-    EAP   = datadict["S"]['data']['E']
-    PmAP  = datadict["S"]['data']['Pm']
-    ElsAP = datadict["S"]['data']['rmsCMBtotal']
-    Els1  = datadict["S"]['data']['RMSCMBl=1']
-
-    datadict["S"]['rmsINT'] = {}
-    datadict["S"]['rmsCMB'] = {}
-    datadict["S"]['dipCMB'] = {}
-    
-    print(datadict["S"]['data']['p'])
-    print(datadict["S"]['data']['fohm'])
-
-    datadict["S"]['rmsINT']['Le'] = np.sqrt( (EAP/PmAP) ) * ElsAP
-    datadict["S"]['dipCMB']['Le'] = np.sqrt( (EAP/PmAP) ) * Els1
-
-    datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = b.fits(PAP, datadict["S"]['rmsINT']['Le'], fohmAP)
-    datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = b.fits(PAP, datadict["S"]['dipCMB']['Le'], fohmAP)
-
-
-# Christensen
-# Ek has no factor 2
-# Fundamental length scale is shell thickness, time scale is viscous diffusion time, magnetic field scale is "Elsasser scale".
-# NOTE that variables names "Els" are actually RMS field strengths!!
-if datadict["UC"]:
-    EUC,PmUC,ElsUC,ElsrmscmbUC,ElsdipcmbUC,PUC,fohmUC,RmUC,EmagUC = np.loadtxt(christname, usecols=(0,4,26,27,29,31,32,10,19), skiprows=2, unpack='true')
-    LeUC      = np.sqrt( (EUC/PmUC) ) * ElsUC        # Eqn 14 of CA06
-    LeUCrmscmb= np.sqrt( (EUC/PmUC) ) * ElsrmscmbUC
-    LeUCdipcmb= np.sqrt( (EUC/PmUC) ) * ElsdipcmbUC
-    PUC       = 1e7 * PUC * EUC**3
-    fohmUC    = fohmUC / 100
-    if myfohm == 1:
-        fohmUC = np.ones(len(fohmUC)) 
-    bdipUC    = LeUC/LeUCdipcmb
-    nsimsUC   = len(PUC)
-    ssrUC      , mUC      , cUC      , resUC       = b.fits(PUC, LeUC      , fohmUC)
-    ssrUCrmscmb, mUCrmscmb, cUCrmscmb, resUCrmscmb = b.fits(PUC, LeUCrmscmb, fohmUC)
-    ssrUCdipcmb, mUCdipcmb, cUCdipcmb, resUCdipcmb = b.fits(PUC, LeUCdipcmb, fohmUC)
-
-    if chk == 1:
-        # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
-        # Em = Els / (2*Pm*E) = Le**2 / (2 E**2) 
-        # P is printed to chk against Christensen 10 Fig 2. Note he uses Rc instead of D for 
-        #   length and there is a factor 1/4pi in the Ra_Q definition. 
-        #   NOTE - I still do not understand how to calculate his F. 
-        print('\n*******Christensen FF******')
-        EfromLe  = LeUC**2 * PmUC / 2.0 / EUC**2 / PmUC
-        Efromfile = EmagUC
-        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
-        print('Power at E=3e-5       = ', PUC[26:35] / (1-0.35)**2 *4.0*np.pi)
-        print('***************************\n')
-
-if datadict["UCt"]:
-    EUCt,PmUCt,ElsUCt,ElsrmscmbUCt,ElsdipcmbUCt,PUCt,fohmUCt,RmUCt,EmagUCt = np.loadtxt(christnamet, usecols=(0,4,27,28,30,32,33,11,20), skiprows=1, unpack='true')
-    LeUCt      = np.sqrt((EUCt/PmUCt)) * ElsUCt
-    LeUCtrmscmb= np.sqrt((EUCt/PmUCt)) * ElsrmscmbUCt
-    LeUCtdipcmb= np.sqrt((EUCt/PmUCt)) * ElsdipcmbUCt
-    PUCt       = 1e7 * PUCt * EUCt**3
-    fohmUCt    = fohmUCt / 100
-    if myfohm == 1:
-        fohmUCt = np.ones(len(fohmUCt))
-    bdipUCt    = LeUCt/LeUCtdipcmb
-    nsimsUCt   = len(PUCt)
-    ssrUCt      , mUCt      , cUCt      , resUCt       = b.fits(PUCt, LeUCt      , fohmUCt)
-    ssrUCtrmscmb, mUCtrmscmb, cUCtrmscmb, resUCtrmscmb = b.fits(PUCt, LeUCtrmscmb, fohmUCt)
-    ssrUCtdipcmb, mUCtdipcmb, cUCtdipcmb, resUCtdipcmb = b.fits(PUCt, LeUCtdipcmb, fohmUCt)
-
-    if chk == 1:
-        # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
-        # Em = Els / (2*Pm*E) = Le**2 / (2 E**2) 
-        print('*******Christensen qT******')
-        EfromLe  = LeUCt**2 * PmUCt / 2.0 / EUCt**2 / PmUCt
-        Efromfile = EmagUCt
-        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
-        print('***************************\n')
-
 # Leeds dataset
-if datadict["L"]:
+if datadict["L"]["plot"]:
     ar,EC,PmC,EmC,VDC,ODC,ElsCmbC,ElsDipCmbC,gauss_ElsCmbC,gauss_ElsDipCmbC,RmC = np.loadtxt(leedsname,
                                                                                   usecols=(76,52,70,63,54,64,58,60,3,5,73),
                                                                                   skiprows=1, unpack='true', delimiter=",")
@@ -393,7 +190,7 @@ if datadict["L"]:
         ax.set_ylabel('$W_1$')
         plt.show(block=False)
         plt.tight_layout()
-        plt.savefig('./eardme/fig/Check_Emag_Gauss.pdf',format='pdf')
+        plt.savefig('./fig/Check_Emag_Gauss.pdf',format='pdf')
         del ax
 
     # Calculate shell volume
@@ -408,13 +205,116 @@ if datadict["L"]:
     LeCdipcmb= 2. * np.sqrt(EC/PmC * ElsDipCmbC)
     PC       = 8.0 * (EC/PmC)**3 * (VDC+ODC) / volS
     bdipC    = LeC/LeCdipcmb
-    nsimsC   = len(PC)
-    ssrC      , mC      , cC      , resC       = b.fits(PC, LeC      , fohmC)
-    ssrCrmscmb, mCrmscmb, cCrmscmb, resCrmscmb = b.fits(PC, LeCrmscmb, fohmC)
-    ssrCdipcmb, mCdipcmb, cCdipcmb, resCdipcmb = b.fits(PC, LeCdipcmb, fohmC)
+    # Store in dictionary and make fit
+    datadict["L"]["E"] = EC
+    datadict["L"]["Pm"] = PmC
+    datadict["L"]["Rm"] = RmC 
+    datadict["L"]["fohm"] = fohmC 
+    datadict["L"]["p"] = PC
+    datadict["L"]["bdip"] = bdipC
+    datadict["L"]["rmsINT"]["Le"] = LeC; datadict["L"]["rmsCMB"]["Le"] = LeCrmscmb; datadict["L"]["dipCMB"]["Le"] = LeCdipcmb
+
+    datadict["L"]["rmsINT"]["ssr"], datadict["L"]["rmsINT"]["m"], datadict["L"]["rmsINT"]["c"], datadict["L"]["rmsINT"]["res"] = b.fits(PC, LeC, fohmC)
+    datadict["L"]["rmsCMB"]["ssr"], datadict["L"]["rmsCMB"]["m"], datadict["L"]["rmsCMB"]["c"], datadict["L"]["rmsCMB"]["res"] = b.fits(PC, LeCrmscmb, fohmC)
+    datadict["L"]["dipCMB"]["ssr"], datadict["L"]["dipCMB"]["m"], datadict["L"]["dipCMB"]["c"], datadict["L"]["dipCMB"]["res"] = b.fits(PC, LeCdipcmb, fohmC)
+
+# Get Aubert data
+# NB - Aubert uses different radii! chi dependence of parameters?
+if datadict["A"]:
+    EA   , LeA   ,bdipA,fdipA,PA   ,fohmA, dAall,RoA,PmA   = np.loadtxt(aubertname, usecols=(0,7,8,9,12,13,10,6,3), skiprows=1, unpack='true')
+    RmA = RoA / EA * PmA
+    if myfohm == 1:
+        fohmA = np.ones(len(fohmA))
+    LeAdipcmb    = LeA   /bdipA
+    LeArmscmb    = LeA   /(bdipA*fdipA)
+    lAall = 2.0*np.pi / (dAall + 0.5) # Jeans' formula.
+    # Store in dictionary and make fit
+    datadict["A"]["E"] = EA
+    datadict["A"]["Pm"] = PmA
+    datadict["A"]["Rm"] = RmA
+    datadict["A"]["fohm"] = fohmA
+    datadict["A"]["p"] = PA
+    datadict["A"]["bdip"] = bdipA
+    datadict["A"]["rmsINT"]["Le"] = LeA; datadict["A"]["rmsCMB"]["Le"] = LeArmscmb; datadict["A"]["dipCMB"]["Le"] = LeAdipcmb
+
+    datadict["A"]["rmsINT"]["ssr"], datadict["A"]["rmsINT"]["m"], datadict["A"]["rmsINT"]["c"], datadict["A"]["rmsINT"]["res"] = b.fits(PA, LeA, fohmA)
+    datadict["A"]["rmsCMB"]["ssr"], datadict["A"]["rmsCMB"]["m"], datadict["A"]["rmsCMB"]["c"], datadict["A"]["rmsCMB"]["res"] = b.fits(PA, LeArmscmb, fohmA)
+    datadict["A"]["dipCMB"]["ssr"], datadict["A"]["dipCMB"]["m"], datadict["A"]["dipCMB"]["c"], datadict["A"]["dipCMB"]["res"] = b.fits(PA, LeAdipcmb, fohmA)
+
+# Christensen dataset
+# Ek has no factor 2
+# Fundamental length scale is shell thickness, time scale is viscous diffusion time, magnetic field scale is "Elsasser scale".
+# NOTE that variables names "Els" are actually RMS field strengths!!
+if datadict["UC"]["plot"]:
+    EUC,PmUC,ElsUC,ElsrmscmbUC,ElsdipcmbUC,PUC,fohmUC,RmUC,EmagUC = np.loadtxt(christname, usecols=(0,4,26,27,29,31,32,10,19), skiprows=2, unpack='true')
+    PUC       = 1e7 * PUC * EUC**3
+    fohmUC    = fohmUC / 100
+    if myfohm == 1:
+        fohmUC = np.ones(len(fohmUC))
+    LeUC      = np.sqrt( (EUC/PmUC) ) * ElsUC        # Eqn 14 of CA06
+    LeUCrmscmb= np.sqrt( (EUC/PmUC) ) * ElsrmscmbUC
+    LeUCdipcmb= np.sqrt( (EUC/PmUC) ) * ElsdipcmbUC
+    bdipUC    = LeUC/LeUCdipcmb
+    # Store in dictionary and make fit
+    datadict["UC"]["E"] = EUC
+    datadict["UC"]["Pm"] = PmUC
+    datadict["UC"]["Rm"] = RmUC
+    datadict["UC"]["fohm"] = fohmUC
+    datadict["UC"]["p"] = PUC
+    datadict["UC"]["bdip"] = bdipUC
+    datadict["UC"]["rmsINT"]["Le"] = LeUC; datadict["UC"]["rmsCMB"]["Le"] = LeUCrmscmb; datadict["UC"]["dipCMB"]["Le"] = LeUCdipcmb
+
+    datadict["UC"]["rmsINT"]["ssr"], datadict["UC"]["rmsINT"]["m"], datadict["UC"]["rmsINT"]["c"], datadict["UC"]["rmsINT"]["res"] = b.fits(PUC, LeUC, fohmUC)
+    datadict["UC"]["rmsCMB"]["ssr"], datadict["UC"]["rmsCMB"]["m"], datadict["UC"]["rmsCMB"]["c"], datadict["UC"]["rmsCMB"]["res"] = b.fits(PUC, LeUCrmscmb, fohmUC)
+    datadict["UC"]["dipCMB"]["ssr"], datadict["UC"]["dipCMB"]["m"], datadict["UC"]["dipCMB"]["c"], datadict["UC"]["dipCMB"]["res"] = b.fits(PUC, LeUCdipcmb, fohmUC)
+
+    if chk == 1:
+        # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
+        # Em = Els / (2*Pm*E) = Le**2 / (2 E**2) 
+        # P is printed to chk against Christensen 10 Fig 2. Note he uses Rc instead of D for 
+        #   length and there is a factor 1/4pi in the Ra_Q definition. 
+        #   NOTE - I still do not understand how to calculate his F. 
+        print('\n*******Christensen FF******')
+        EfromLe  = LeUC**2 * PmUC / 2.0 / EUC**2 / PmUC
+        Efromfile = EmagUC
+        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
+        print('Power at E=3e-5       = ', PUC[26:35] / (1-0.35)**2 *4.0*np.pi)
+        print('***************************\n')
+
+if datadict["UCt"]["plot"]:
+    EUCt,PmUCt,ElsUCt,ElsrmscmbUCt,ElsdipcmbUCt,PUCt,fohmUCt,RmUCt,EmagUCt = np.loadtxt(christnamet, usecols=(0,4,27,28,30,32,33,11,20), skiprows=1, unpack='true')
+    LeUCt      = np.sqrt((EUCt/PmUCt)) * ElsUCt
+    LeUCtrmscmb= np.sqrt((EUCt/PmUCt)) * ElsrmscmbUCt
+    LeUCtdipcmb= np.sqrt((EUCt/PmUCt)) * ElsdipcmbUCt
+    PUCt       = 1e7 * PUCt * EUCt**3
+    fohmUCt    = fohmUCt / 100
+    if myfohm == 1:
+        fohmUCt = np.ones(len(fohmUCt))
+    bdipUCt    = LeUCt/LeUCtdipcmb
+    # Store in dictionary and make fit
+    datadict["UCt"]["E"] = EUCt
+    datadict["UCt"]["Pm"] = PmUCt
+    datadict["UCt"]["Rm"] = RmUCt
+    datadict["UCt"]["fohm"] = fohmUCt
+    datadict["UCt"]["p"] = PUCt
+    datadict["UCt"]["bdip"] = bdipUCt
+    datadict["UCt"]["rmsINT"]["Le"] = LeUCt; datadict["UCt"]["rmsCMB"]["Le"] = LeUCtrmscmb; datadict["UCt"]["dipCMB"]["Le"] = LeUCtdipcmb
+
+    datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = b.fits(PUCt, LeUCt, fohmUCt)
+    datadict["UCt"]["rmsCMB"]["ssr"], datadict["UCt"]["rmsCMB"]["m"], datadict["UCt"]["rmsCMB"]["c"], datadict["UCt"]["rmsCMB"]["res"] = b.fits(PUCt, LeUCtrmscmb, fohmUCt)
+    datadict["UCt"]["dipCMB"]["ssr"], datadict["UCt"]["dipCMB"]["m"], datadict["UCt"]["dipCMB"]["c"], datadict["UCt"]["dipCMB"]["res"] = b.fits(PUCt, LeUCtdipcmb, fohmUCt)
+
+    if chk == 1:
+        # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
+        # Em = Els / (2*Pm*E) = Le**2 / (2 E**2) 
+        print('*******Christensen qT******')
+        EfromLe  = LeUCt**2 * PmUCt / 2.0 / EUCt**2 / PmUCt
+        Efromfile = EmagUCt
+        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
+        print('***************************\n')
 
 # Yadav - NOTE - he uses fixed T. Extracts E, Pm, Elasser, Elsasser_CMB, Dip_CMB, Buo_pow, Ohm_diss
-if datadict["Y"]:
+if datadict["Y"]["plot"]:
     EY,PmY,ElY,ElCMBY,dipCMBY,BWY,ODY,ReY,EmPY,EmTY  = np.loadtxt(yadavname, usecols=(0,2,10,11,13,15,16,5,8,9), skiprows=1, unpack='true')
     RmY = ReY/PmY
     if myfohm == 1:
@@ -426,10 +326,18 @@ if datadict["Y"]:
     LeYdipcmb= np.sqrt(ElCMBY*dipCMBY*EY/PmY)
     PY       = (EY)**3 * BWY   / b.shellVolume(0.35)
     bdipY    = LeY/LeYdipcmb
-    nsimsY   = len(PY)
-    ssrY      , mY      , cY      , resY       = b.fits(PY, LeY      , fohmY)
-    ssrYrmscmb, mYrmscmb, cYrmscmb, resYrmscmb = b.fits(PY, LeYrmscmb, fohmY)
-    ssrYdipcmb, mYdipcmb, cYdipcmb, resYdipcmb = b.fits(PY, LeYdipcmb, fohmY)
+    # Store in dictionary and make fit
+    datadict["Y"]["E"] = EY
+    datadict["Y"]["Pm"] = PmY
+    datadict["Y"]["Rm"] = RmY
+    datadict["Y"]["fohm"] = fohmY
+    datadict["Y"]["p"] = PY
+    datadict["Y"]["bdip"] = bdipY
+    datadict["Y"]["rmsINT"]["Le"] = LeY; datadict["Y"]["rmsCMB"]["Le"] = LeYrmscmb; datadict["Y"]["dipCMB"]["Le"] = LeYdipcmb
+
+    datadict["Y"]["rmsINT"]["ssr"], datadict["Y"]["rmsINT"]["m"], datadict["Y"]["rmsINT"]["c"], datadict["Y"]["rmsINT"]["res"] = b.fits(PY, LeY, fohmY)
+    datadict["Y"]["rmsCMB"]["ssr"], datadict["Y"]["rmsCMB"]["m"], datadict["Y"]["rmsCMB"]["c"], datadict["Y"]["rmsCMB"]["res"] = b.fits(PY, LeYrmscmb, fohmY)
+    datadict["Y"]["dipCMB"]["ssr"], datadict["Y"]["dipCMB"]["m"], datadict["Y"]["dipCMB"]["c"], datadict["Y"]["dipCMB"]["res"] = b.fits(PY, LeYdipcmb, fohmY)
 
     if chk == 1:
         # CHECK: Relate Elsasser to EM, total magnetic energy 
@@ -440,74 +348,74 @@ if datadict["Y"]:
         print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
         print('***************************\n')
 
-# Get Aubert values
-# NB - Aubert uses different radii! chi dependence of parameters?
-if datadict["A"]:
-    EA   , LeA   ,bdipA,fdipA,PA   ,fohmA, dAall,RoA,PmA   = np.loadtxt(aubertname, usecols=(0,7,8,9,12,13,10,6,3), skiprows=1, unpack='true')
-    RmA = RoA / EA * PmA
-    if myfohm == 1:
-        fohmA = np.ones(len(fohmA))
-    LeAdipcmb    = LeA   /bdipA
-    LeArmscmb    = LeA   /(bdipA*fdipA)
-    lAall = 2.0*np.pi / (dAall + 0.5) # Jeans' formula.
-    nsimsA = len(PA)
-    ssrA      , mA      , cA      , resA       = b.fits(PA, LeA      , fohmA)
-    ssrArmscmb, mArmscmb, cArmscmb, resArmscmb = b.fits(PA, LeArmscmb, fohmA)
-    ssrAdipcmb, mAdipcmb, cAdipcmb, resAdipcmb = b.fits(PA, LeAdipcmb, fohmA)
-    print('cA = ', cA, cArmscmb, cAdipcmb)
+if datadict['APath']["plot"]:
+    fohm_dum = datadict["APath"]['data']['fohm']
+    P_dum    = datadict["APath"]['data']['p']
+    E_dum    = datadict["APath"]['data']['E']
+    Pm_dum   = datadict["APath"]['data']['Pm']
+    Els_dum  = datadict["APath"]['data']['rmsCMBtotal']
+    Els12_dum  = datadict["APath"]['data']['RMSCMBl=12']
+    Els1_dum   = datadict["APath"]['data']['RMSCMBl=1']
 
-# Construct datasets
-if not datadict["Y"]:
-    raise ValueError('Y dataset is emply. Choose other initial dataset.')
-Rmall   = RmY
-Eall    = EY
-Leall   = LeY
-Lermscmb= LeYrmscmb
-Ledipcmb= LeYdipcmb
-PAall   = PY
-fohmall = fohmY
-bdipall = bdipY
+    datadict["APath"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_dum
+    datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els12_dum
+    datadict["APath"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
 
-# cd - NEEDS TO BE A LOOP OVER ENTRIES IN DATADICT
+    datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = b.fits(P_dum, datadict["APath"]['rmsINT']['Le'], fohm_dum)
+    datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = b.fits(P_dum, datadict["APath"]['rmsCMB']['Le'], fohm_dum)
+    datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = b.fits(P_dum, datadict["APath"]['dipCMB']['Le'], fohm_dum)
 
-if datadict["A"]:
-    Rmall   = np.concatenate((Rmall,RmA))
-    Eall    = np.concatenate((Eall,EA))
-    Leall   = np.concatenate((Leall,LeA))
-    Lermscmb= np.concatenate((Lermscmb,LeArmscmb))
-    Ledipcmb= np.concatenate((Ledipcmb,LeAdipcmb))
-    PAall   = np.concatenate((PAall,PA))
-    fohmall = np.concatenate((fohmall,fohmA))
-    bdipall = np.concatenate((bdipall,bdipA))
-if datadict["L"]:
-    Rmall   = np.concatenate((Rmall,RmC))
-    Eall    = np.concatenate((Eall,EC))
-    Leall   = np.concatenate((Leall,LeC))
-    Lermscmb= np.concatenate((Lermscmb,LeCrmscmb))
-    Ledipcmb= np.concatenate((Ledipcmb,LeCdipcmb))
-    PAall   = np.concatenate((PAall,PC))
-    fohmall = np.concatenate((fohmall,fohmC))
-    bdipall = np.concatenate((bdipall,bdipC))
-if datadict["UC"]:
-    Rmall   = np.concatenate((Rmall,RmUC))
-    Eall    = np.concatenate((Eall,EUC))
-    Leall   = np.concatenate((Leall,LeUC))
-    Lermscmb= np.concatenate((Lermscmb,LeUCrmscmb))
-    Ledipcmb= np.concatenate((Ledipcmb,LeUCdipcmb))
-    PAall   = np.concatenate((PAall,PUC))
-    fohmall = np.concatenate((fohmall,fohmUC))
-    bdipall = np.concatenate((bdipall,bdipUC))
-if datadict["UCt"]:
-    Rmall   = np.concatenate((Rmall,RmUCt))
-    Eall    = np.concatenate((Eall,EUCt))
-    Leall   = np.concatenate((Leall,LeUCt))
-    Lermscmb= np.concatenate((Lermscmb,LeUCtrmscmb))
-    Ledipcmb= np.concatenate((Ledipcmb,LeUCtdipcmb))
-    PAall   = np.concatenate((PAall,PUCt))
-    fohmall = np.concatenate((fohmall,fohmUCt))
-    bdipall = np.concatenate((bdipall,bdipUCt))
+if datadict['S']["plot"]:
+    fohm_dum   = datadict["S"]['data']['fohm']
+    P_dum   = datadict["S"]['data']['p']
+    E_dum   = datadict["S"]['data']['E']
+    Pm_dum  = datadict["S"]['data']['Pm']
+    Els_dum = datadict["S"]['data']['rmsCMBtotal']
+    Els1_dum  = datadict["S"]['data']['RMSCMBl=1']
 
-# Fits
+    datadict["S"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_dum
+    datadict["S"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
+
+    datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = b.fits(P_dum, datadict["S"]['rmsINT']['Le'], fohm_dum)
+    datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = b.fits(P_dum, datadict["S"]['dipCMB']['Le'], fohm_dum)
+
+# Construct datasets of all simulations
+firstkey = True
+for key in datadict:
+    print("\nDataset : %s" %(key))
+    if datadict[key]["plot"]:
+        if firstkey:
+            Rmall    = datadict[key]["Rm"] 
+            Eall     = datadict[key]["E"]
+            Leall    = datadict[key]["rmsINT"]["Le"]
+            Lermscmb = datadict[key]["rmsCMB"]["Le"]
+            Ledipcmb = datadict[key]["dipCMB"]["Le"]
+            PAall    = datadict[key]["p"]
+            fohmall  = datadict[key]["fohm"]
+            bdipall  = datadict[key]["bdip"]
+            firstkey = False
+        else:
+            Rmall    = np.concatenate((Rmall,datadict[key]["Rm"]))
+            Eall     = np.concatenate((Eall,datadict[key]["E"]))
+            Leall    = np.concatenate((Leall,datadict[key]["rmsINT"]["Le"]))
+            Lermscmb = np.concatenate((Lermscmb,datadict[key]["rmsCMB"]["Le"]))
+            Ledipcmb = np.concatenate((Ledipcmb,datadict[key]["dipCMB"]["Le"]))
+            PAall    = np.concatenate((PAall,datadict[key]["p"]))
+            fohmall  = np.concatenate((fohmall,datadict[key]["fohm"]))
+            bdipall  = np.concatenate((bdipall,datadict[key]["bdip"]))
+    else:
+        print("Plot set to False.")
+
+alldatadict["Rm"] = Rmall
+alldatadict["E"] = Eall
+alldatadict["rmsINT"]["Le"] = Leall
+alldatadict["rmsCMB"]["Le"] = Lermscmb
+alldatadict["dipCMB"]["Le"] = Ledipcmb 
+alldatadict["p"] = PAall
+alldatadict["fohm"] = fohmall
+alldatadict["bdip"] = bdipall 
+
+# Fit all data
 xmin = 1e-14
 xmax = 1e-3
 Pfit = np.linspace(xmin, xmax, 10)
@@ -523,9 +431,15 @@ fitdipcmb = 10**cdipcmb * Pfit**mdipcmb
 resall    = np.sqrt(covall[0,0])
 resrmscmb = np.sqrt(covrmscmb[0,0])
 resdipcmb = np.sqrt(covdipcmb[0,0])
+# Now store in dictionary
+alldatadict["rmsINT"]["m"] = mall; alldatadict["rmsINT"]["res"] = resall; alldatadict["rmsINT"]["ssr"] = ssrall
+alldatadict["rmsCMB"]["m"] = mrmscmb; alldatadict["rmsCMB"]["res"] = resrmscmb; alldatadict["rmsCMB"]["ssr"] = ssrrmscmb
+alldatadict["dipCMB"]["m"] = mdipcmb; alldatadict["dipCMB"]["res"] = resdipcmb; alldatadict["dipCMB"]["ssr"] = ssrdipcmb
+
 print('All     (slope, 10^c, std dev c, SSR) =', mall   , 10**call   , resall, ssrall)
 print('RMS CMB (slope, 10^c, std dev c, SSR) =', mrmscmb, 10**crmscmb, resrmscmb, ssrrmscmb)
 print('DIP CMB (slope, 10^c, std dev c, SSR) =', mdipcmb, 10**cdipcmb, resdipcmb, ssrdipcmb)
+
 if calc_prefac_err:
     # - Error estimate on the prefactor for CMB dip field strength
     c_err_dipcmb = b.prefacError(PAall, Ledipcmb/fohmall**0.5, model=[10**cdipcmb,mdipcmb], plot=False, quiet=False)
@@ -537,87 +451,23 @@ if calc_prefac_err:
     fitdipcmb_5sdp = 10**(cdipcmb+5.*c_sd) * Pfit**mdipcmb
     fitdipcmb_5sdm = 10**(cdipcmb-5.*c_sd) * Pfit**mdipcmb
 
-# - Define symbols' colours for plotting
+# - Define symbols' properties for plotting
 Cmax = np.log10(1000.0)#np.log10(np.max(Eall))
 Cmin = np.log10(50.0)#np.log10(np.min(Eall))
-if datadict["A"]:
-    ColA = RmA / PmA
-if datadict["L"]:
-    ColC = RmC / PmC
-if datadict["Y"]:
-    ColY = RmY / PmY
-if datadict["UC"]:
-    ColU = RmUC/ PmUC
-if datadict["UCt"]:
-    ColUt= RmUCt/ PmUCt
+
+datadict = b.getPlotProperties(datadict)
 
 # - Plot bdip stuff
 if plt_bdip:
-    """
-    # - bdip vs fdip
-    fig = plt.figure(figsize=(8,10))
-    ax = fig.add_subplot(311)
-    plt.scatter(fdipA, bdipA, s=150, marker="^", c=np.log10(ColA), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Oranges"), edgecolor='orange',label="Aubert et al (2009)")
-    plt.scatter(fdipY, bdipY, s=150, marker="o", c=np.log10(ColY), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Reds"),edgecolor='red'   ,label="Yadav et al (2016)")
-    plt.scatter(fdipC, bdipC, s=150, marker="*", c=np.log10(ColC), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
-    plt.scatter(fdipUC, bdipUC, s=150, marker="v", c=np.log10(ColU), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
-    plt.scatter(fdipUCt, bdipUCt, s=150, marker="^", c=np.log10(ColUt), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
-    ax.set_xlabel('$f_{dip}$')
-    ax.set_ylabel('$b_{dip}$')
-    plt.xlim([0.,1.]); plt.ylim([0.,200.])
-
-    ax = fig.add_subplot(312)
-    plt.scatter(fdipA, bdipA, s=150, marker="^", c=np.log10(ColA), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Oranges"), edgecolor='orange',label="Aubert et al (2009)")
-    plt.scatter(fdipY, bdipY, s=150, marker="o", c=np.log10(ColY), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Reds"),edgecolor='red'   ,label="Yadav et al (2016)")
-    plt.scatter(fdipC, bdipC, s=150, marker="*", c=np.log10(ColC), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
-    plt.scatter(fdipUC, bdipUC, s=150, marker="v", c=np.log10(ColU), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
-    plt.scatter(fdipUCt, bdipUCt, s=150, marker="^", c=np.log10(ColUt), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
-    ax.set_xlabel('$f_{dip}$')
-    ax.set_ylabel('$b_{dip}$')
-    plt.xlim([0.5,1.]); plt.ylim([0.,30.])
-    ax = fig.add_subplot(313)
-    plt.scatter(fdipA, bdipA, s=150, marker="^", c=np.log10(ColA), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Oranges"), edgecolor='orange',label="Aubert et al (2009)")
-    plt.scatter(fdipY, bdipY, s=150, marker="o", c=np.log10(ColY), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Reds"),edgecolor='red'   ,label="Yadav et al (2016)")
-    plt.scatter(fdipC, bdipC, s=150, marker="*", c=np.log10(ColC), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
-    plt.scatter(fdipUC, bdipUC, s=150, marker="v", c=np.log10(ColU), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
-    plt.scatter(fdipUCt, bdipUCt, s=150, marker="^", c=np.log10(ColUt), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
-    ax.set_xlabel('$f_{dip}$')
-    ax.set_ylabel('$b_{dip}$')
-    plt.xlim([0.4,0.8]); plt.ylim([0.,70.])
- 
-    plt.show(block=False)
-    plt.tight_layout()
-    plt.savefig('./eardme/fig/bdip_vs_fdip_fdipN='+fdipn+'.pdf',format='pdf')
-    del ax
-    """
     # - bdip vs buoyancy power
     fig = plt.figure(figsize=(8,6))
     ax = fig.add_subplot(111)
-    plt.scatter(PA, bdipA, s=150, marker="^", c=np.log10(ColA), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Oranges"), edgecolor='orange',label="Aubert et al (2009)")
-    plt.scatter(PY, bdipY, s=150, marker="o", c=np.log10(ColY), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Reds"),edgecolor='red'   ,label="Yadav et al (2016)")
-    plt.scatter(PC, bdipC, s=150, marker="*", c=np.log10(ColC), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
-    plt.scatter(PUC, bdipUC, s=150, marker="v", c=np.log10(ColU), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
-    plt.scatter(PUCt, bdipUCt, s=150, marker="^", c=np.log10(ColUt), vmin=Cmin, vmax=Cmax,
-                cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
+    for key in datadict:
+        if datadict[key]["plot"]:
+            plt.scatter(datadict[key]["p"], datadict[key]["bdip"],
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
     ax.set_xlabel('$P_A$')
     ax.set_ylabel('$b_{dip}$')
     plt.xlim([1.e-10,1.e-3]); plt.ylim([1.e+0,50.])
@@ -634,89 +484,19 @@ if plt_bdip:
 
     plt.show(block=False)
     plt.tight_layout()
-    plt.savefig('./eardme/fig/bdip_vs_P_fdip='+fdipn+'.pdf',format='pdf')
+    plt.savefig('./fig/bdip_vs_P_fdip='+fdipn+'.pdf',format='pdf')
     del ax
 
-# --- Store fitted slopes and pre-factors in output files
-# Slopes file
-fout = open(outfpath+outfname, "w")
-delim = "     "
-fout.write("--- B rms ---\n")
-fout.write("Dataset            "+delim+"slope m    "+"std. err. "+" SSR\n")
-if datadict["A"]:
-    fout.write("Aubert et al (2009)"+delim+str(np.round(mA,4))+delim+str(np.round(resA,4))+delim+str(np.round(ssrA[0],4))+"\n")
-if datadict["Y"]:
-    fout.write("Yadav et al  (2016)"+delim+str(np.round(mY,4))+delim+str(np.round(resY,4))+delim+str(np.round(ssrY[0],4))+"\n")
-if datadict["L"]:
-    fout.write("Leeds              "+delim+str(np.round(mC,4))+delim+str(np.round(resC,4))+delim+str(np.round(ssrC[0],4))+"\n")
-if datadict["UC"]:
-    fout.write("Christensen        "+delim+str(np.round(mUC,4))+delim+str(np.round(resUC,4))+delim+str(np.round(ssrUC[0],4))+"\n")
-if datadict["UCt"]:
-    fout.write("Christensen T      "+delim+str(np.round(mUCt,4))+delim+str(np.round(resUCt,4))+delim+str(np.round(ssrUCt[0],4))+"\n")
-fout.write("All                "+delim+str(np.round(mall,4))+delim+str(np.round(resall,4))+delim+str(np.round(ssrall[0],4))+"\n")
-fout.write("\n")
-fout.write("--- B rms cmb ---\n")
-fout.write("Dataset            "+delim+"slope m    "+"std. err. "+" SSR\n")
-if datadict["A"]:
-    fout.write("Aubert et al (2009)"+delim+str(np.round(mArmscmb,4))+delim+str(np.round(resArmscmb,4))+delim+str(np.round(ssrArmscmb[0],4))+"\n")
-if datadict["Y"]:
-    fout.write("Yadav et al  (2016)"+delim+str(np.round(mYrmscmb,4))+delim+str(np.round(resYrmscmb,4))+delim+str(np.round(ssrYrmscmb[0],4))+"\n")
-if datadict["L"]:
-    fout.write("Leeds              "+delim+str(np.round(mCrmscmb,4))+delim+str(np.round(resCrmscmb,4))+delim+str(np.round(ssrCrmscmb[0],4))+"\n")
-if datadict["UC"]:
-    fout.write("Christensen        "+delim+str(np.round(mUCrmscmb,4))+delim+str(np.round(resUCrmscmb,4))+delim+str(np.round(ssrUCrmscmb[0],4))+"\n")
-if datadict["UCt"]:
-    fout.write("Christensen T      "+delim+str(np.round(mUCtrmscmb,4))+delim+str(np.round(resUCtrmscmb,4))+delim+str(np.round(ssrUCtrmscmb[0],4))+"\n")
-fout.write("All                "+delim+str(np.round(mrmscmb,4))+delim+str(np.round(resrmscmb,4))+delim+str(np.round(ssrrmscmb[0],4))+"\n")
-fout.write("\n")
-fout.write("--- B dip cmb ---\n")
-fout.write("Dataset            "+delim+"slope m    "+"std. err. "+" SSR\n")
-if datadict["A"]:
-    fout.write("Aubert et al (2009)"+delim+str(np.round(mAdipcmb,4))+delim+str(np.round(resAdipcmb,4))+delim+str(np.round(ssrAdipcmb[0],4))+"\n")
-if datadict["Y"]:
-    fout.write("Yadav et al  (2016)"+delim+str(np.round(mYdipcmb,4))+delim+str(np.round(resYdipcmb,4))+delim+str(np.round(ssrYdipcmb[0],4))+"\n")
-if datadict["L"]:
-    fout.write("Leeds              "+delim+str(np.round(mCdipcmb,4))+delim+str(np.round(resCdipcmb,4))+delim+str(np.round(ssrCdipcmb[0],4))+"\n")
-if datadict["UC"]:
-    fout.write("Christensen        "+delim+str(np.round(mUCdipcmb,4))+delim+str(np.round(resUCdipcmb,4))+delim+str(np.round(ssrUCdipcmb[0],4))+"\n")
-if datadict["UCt"]:
-    fout.write("Christensen T      "+delim+str(np.round(mUCtdipcmb,4))+delim+str(np.round(resUCtdipcmb,4))+delim+str(np.round(ssrUCtdipcmb[0],4))+"\n")
-fout.write("All                "+delim+str(np.round(mdipcmb,4))+delim+str(np.round(resdipcmb,4))+delim+str(np.round(ssrdipcmb[0],4))+"\n")
-fout.close()
 
+# --- Store fitted values in output files
+b.saveFitValues(filename=outfpath+outfname, datadict=datadict, alldatadict=alldatadict)
 
 ##########################################################
 # Extrapolated figures
 ##########################################################
 
-# Brmax = (a/r)^3 g10
-ri    = 1221e3
-rc    = 3480e3
-rsurf = 6371e3
-omega = 7.272e-5
-dd    = rc-ri
-rho   = 1e4
-mu0   = 4.*np.pi*1.e-7 
-Bfac  = np.sqrt(mu0*rho)*omega*dd # Denominator of Lenhert number
-
-# Min and max CMB dipole field strengths for Earth: 20,000 nT and 40,000 nT
-Le_earth_dipmin = 20000e-9 * np.sqrt(2.) * (rsurf/rc)**3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
-Le_earth_dipmax = 40000e-9 * np.sqrt(2.) * (rsurf/rc)**3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
-# Min and max core field strengths for Earth: 1 mT and 10 mT
-Le_earth_rmsmin = 1e-3  / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
-Le_earth_rmsmax = 10e-3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
-# Min and max CMB field strengths for Earth: 0.5 mT and 1 mT
-Le_earth_rmscmbmin = 0.5e-3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
-Le_earth_rmscmbmax = 1e-3 / (np.sqrt(rho*4*np.pi*1e-7)*omega*dd)
-print('Le_earth CMB dipole min/max  = ', Le_earth_dipmin, Le_earth_dipmax)
-print('Le_earth Surf dipole min/max = ', Le_earth_dipmin/(rsurf/rc)**3, Le_earth_dipmax/(rsurf/rc)**3)
-print('Le_earth RMS total  min/max  = ', Le_earth_rmsmin, Le_earth_rmsmax)
-print('Le_earth RMS CMB  min/max    = ', Le_earth_rmscmbmin, Le_earth_rmscmbmax)
-# Min buoyancy pow for Earth: 0.1 TW
-P_earth_min = 1e11 * 3. / (4*np.pi*(rc**3-ri**3)) / rho / omega**3 / dd**2
-# Max buoyancy pow for Earth: 5 TW
-P_earth_max = 5e12 * 3. / (4*np.pi*(rc**3-ri**3)) / rho / omega**3 / dd**2
-print('Power min/max = ', P_earth_min, P_earth_max)
+earthdict["dipCMB"]["min"], earthdict["dipCMB"]["max"], earthdict["rmsINT"]["min"], earthdict["rmsINT"]["max"],\
+    earthdict["rmsCMB"]["min"], earthdict["rmsCMB"]["max"], earthdict["p"]["min"], earthdict["p"]["max"] = b.getEarthEstimates(quiet=False)
 
 # Calculate prefactors of Brms
 c1_En = np.mean(np.log10(Leall/fohmall**0.5) - (1/3.)*np.log10(PAall))
@@ -757,21 +537,12 @@ idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
 ##########################
 # Brms plots
 ##########################
-plt.clf()
-ax  = plt.gca()
-plt.xlim([xmin,xmax])
-plt.ylim([3e-5,0.2])
-if datadict["A"]:
-    plt.scatter(PA  ,LeA/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),edgecolor='orange',label="Aubert et al (2009)")
-if datadict["Y"]:
-    plt.scatter(PY  ,LeY/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds")   ,edgecolor='red'   ,label="Yadav et al (2016)")
-if datadict["L"]:
-    plt.scatter(PC  ,LeC/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
-if datadict["UC"]:
-    plt.scatter(PUC ,LeUC /fohmUC**0.5, s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
-if datadict["UCt"]:
-    plt.scatter(PUCt,LeUCt/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
-plt.loglog(Pfit, fitall, color="black", lw=lw_fit)
+
+# Plot simulations
+ax, legend_xpos, legend_ypos = b.plotSimulations(datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsINT",
+                                             cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[3e-5,0.2])
+
+plt.loglog(Pfit ,fitall, color="black")
 if "IMAC" in plt_extrap_scalings:
     plt.loglog(Pfit, fitimac, color="dimgrey"  ,linestyle="--", lw=lw_fit, label="$m=2/5$ (IMAC)")
 if "IMACd" in plt_extrap_scalings:
@@ -785,7 +556,6 @@ if "IMA" in plt_extrap_scalings:
         plt.fill_between(Pfit, fitEn_1sdm, fitEn_1sdp, color=sc_fit[idxIMA], alpha=sc_alpha, zorder=-1)
     else:
         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit, label="$m=1/3$ (QG-MAC)")
-
 if "MAC" in plt_extrap_scalings:
     if (calc_prefac_err):
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit,
@@ -795,41 +565,17 @@ if "MAC" in plt_extrap_scalings:
         plt.loglog(Pfit, fitmac_3sdp, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
     else:
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit, label="$m=1/4$ (MAC)")
-
-
-ax.add_patch(Rectangle(xy=(P_earth_min,Le_earth_rmsmin) ,width=(P_earth_max-P_earth_min), height=(Le_earth_rmsmax-Le_earth_rmsmin),
-                       linewidth=1, color='black', fill=True))
-
-legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
-if datadict["A"]:
-    plt.text(legend_xpos, 0.95, "$m$  = "+str(np.round(mA,2)) +"$\pm$"+str(np.round(resA,2)) +", SSR="+str(np.round(ssrA[0],2)), transform=ax.transAxes, color='orange')
-if datadict["Y"]:
-    plt.text(legend_xpos, 0.90, "$m$  = "+str(np.round(mY,2)) +"$\pm$"+str(np.round(resY,2)) +", SSR="+str(np.round(ssrY[0],2)), transform=ax.transAxes, color='red')
-if datadict["L"]:
-    plt.text(legend_xpos, 0.85, "$m$  = "+str(np.round(mC,2)) +"$\pm$"+str(np.round(resC,2)) +", SSR="+str(np.round(ssrC[0],2)), transform=ax.transAxes, color='blue')
-if datadict["UC"]:
-    plt.text(legend_xpos, 0.80, "$m$v = "+str(np.round(mUC,2))+"$\pm$"+str(np.round(resUC,2))+", SSR="+str(np.round(ssrUC[0],2)), transform=ax.transAxes, color='purple')
-if datadict["UCt"]:
-    plt.text(legend_xpos, 0.75, "$m$^ = "+str(np.round(mUCt,2))+"$\pm$"+str(np.round(resUCt,2))+", SSR="+str(np.round(ssrUCt[0],2)), transform=ax.transAxes, color='purple')
-
-
-plt.text(legend_xpos, 0.65, "$m$  = "+str(np.round(mall,2))+"$\pm$"+str(np.round(resall,2))+", SSR="+str(np.round(ssrall[0],2)), transform=ax.transAxes, color='black')
-cbar = plt.colorbar()
-cbar.set_label("log $Re$")
+# Plot title and axes labels
 plt.xlabel('$p_A$')
 if myfohm == 0: 
     plt.ylabel('$Le^{\\rm rms}_t/f_{ohm}^{1/2}$')
 elif myfohm == 1: 
     plt.ylabel('$Le^{\\rm rms}_t$')
-ax.set_yscale('log')
-ax.set_xscale('log')
-plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
-plt.rcParams["figure.figsize"] = [15,10]
 
 title_str = b.getPlotTitle(myfdip=myfdip,
             myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
 plt.title(title_str)
-
+# save figure
 file2 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
 file3 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
 if (myEkOPm == 1):
@@ -864,34 +610,9 @@ fitimaci = 10**c1_imaci_rmscmb * Pfit**0.30
 # Brms cmb plots
 ##########################
 
-plt.clf()
-ax  = plt.gca()
-plt.xlim([xmin,xmax])
-plt.ylim([5e-6,0.2])
-if datadict["A"]:
-    plt.scatter(PA  ,LeArmscmb/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),
-                edgecolor='orange',label="Aubert et al (2009)")
-if datadict["Y"]:
-    plt.scatter(PY  ,LeYrmscmb/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds"),
-                edgecolor='red'   ,label="Yadav et al (2016)")
-if datadict["L"]:
-    plt.scatter(PC  ,LeCrmscmb/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues"),
-                edgecolor='blue'  ,label="Leeds")
-if datadict["UC"]:
-    plt.scatter(PUC ,LeUCrmscmb /fohmUC**0.5, s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),
-                edgecolor='purple',label="Christensen 0F")
-if datadict["UCt"]:
-    plt.scatter(PUCt,LeUCtrmscmb/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),
-                edgecolor='purple',label="Christensen FF")
-if datadict["APath"]['YN']:
-    plt.scatter(datadict["APath"]['data']['p'],datadict["APath"]['rmsINT']['Le']/datadict["APath"]['data']['fohm']*0.5,
-                s=150,marker=".",c=np.log10(datadict["APath"]['data']['Rm']/datadict["APath"]['data']['Pm']),
-                vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Greens"),edgecolor='green',label="A17,A19")
-if datadict["S"]['YN']:
-    plt.scatter(datadict["S"]['data']['p'],datadict["S"]['rmsINT']['Le']/datadict["S"]['data']['fohm']*0.5,
-                s=150,marker=".",c=np.log10(datadict["S"]['data']['Rm']/datadict["S"]['data']['Pm']),
-                vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("twilight_r"),edgecolor='pink',label="S19")
-
+# Plot simulations
+ax, legend_xpos, legend_ypos = b.plotSimulations(datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsCMB",
+                                             cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2])
 plt.loglog(Pfit ,fitrmscmb, color="black")
 if "IMAC" in plt_extrap_scalings:
     plt.loglog(Pfit, fitimac,   color="dimgrey"  , linestyle="--", label="$m=2/5$ (IMAC)")
@@ -903,46 +624,13 @@ if "IMA" in plt_extrap_scalings:
     plt.loglog(Pfit, fitEn, color="darkgrey" , linestyle="--", label="$m=1/3$ (IMA)")
 if "MAC" in plt_extrap_scalings:
     plt.loglog(Pfit, fitmac,    color="lightgray", linestyle="--", label="$m=1/4$ (MAC)")
-ax.add_patch(Rectangle(xy=(P_earth_min,Le_earth_rmscmbmin),
-             width=(P_earth_max-P_earth_min), height=(Le_earth_rmscmbmax-Le_earth_rmscmbmin),
-             linewidth=1, color='black', fill=True))
 
-legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
-if datadict["A"]:
-    plt.text(legend_xpos, 0.95, "$m$  = "+str(np.round(mArmscmb,2)) +"$\pm$"+str(np.round(resArmscmb,2)) +", SSR="+str(np.round(ssrArmscmb[0],2)),
-             transform=ax.transAxes, color='orange')
-if datadict["Y"]:
-    plt.text(legend_xpos, 0.90, "$m$  = "+str(np.round(mYrmscmb,2)) +"$\pm$"+str(np.round(resYrmscmb,2)) +", SSR="+str(np.round(ssrYrmscmb[0],2)),
-             transform=ax.transAxes, color='red')
-if datadict["L"]:
-    plt.text(legend_xpos, 0.85, "$m$  = "+str(np.round(mCrmscmb,2)) +"$\pm$"+str(np.round(resCrmscmb,2)) +", SSR="+str(np.round(ssrCrmscmb[0],2)),
-             transform=ax.transAxes, color='blue')
-if datadict["UC"]:
-    plt.text(legend_xpos, 0.80, "$m$v = "+str(np.round(mUCrmscmb,2))+"$\pm$"+str(np.round(resUCrmscmb,2))+", SSR="+str(np.round(ssrUCrmscmb[0],2)),
-             transform=ax.transAxes, color='purple')
-if datadict["UCt"]:
-    plt.text(legend_xpos, 0.75, "$m$^ = "+str(np.round(mUCtrmscmb,2))+"$\pm$"+str(np.round(resUCtrmscmb,2))+", SSR="+str(np.round(ssrUCtrmscmb[0],2)),
-             transform=ax.transAxes, color='purple')
-if datadict["APath"]['YN']:
-    plt.text(legend_xpos, 0.70, "$m$^ = "+str(np.round(datadict["APath"]['rmsINT']['m'],2))+"$\pm$"+str(np.round(datadict["APath"]['rmsINT']['res'],2))+
-             ", SSR="+str(np.round(datadict["APath"]['rmsINT']['ssr'][0],2)), transform=ax.transAxes, color='green')
-if datadict["S"]['YN']:
-    plt.text(legend_xpos, 0.65, "$m$^ = "+str(np.round(datadict["S"]['rmsINT']['m'],2))+"$\pm$"+str(np.round(datadict["S"]['rmsINT']['res'],2))+
-             ", SSR="+str(np.round(datadict["S"]['rmsINT']['ssr'][0],2)), transform=ax.transAxes, color='blue')
-    
-plt.text(legend_xpos, 0.60, "$m$  = "+str(np.round(mrmscmb,2))+"$\pm$"+str(np.round(resrmscmb,2))+", SSR="+str(np.round(ssrrmscmb[0],2)),
-         transform=ax.transAxes, color='black')
-cbar = plt.colorbar()
-cbar.set_label("log $Re$")
 plt.xlabel('$p_A$')
 if myfohm == 0: 
     plt.ylabel('$Le^{\\rm rms}_{\\rm cmb}/f_{ohm}^{1/2}$')
 elif myfohm == 1: 
     plt.ylabel('$Le^{\\rm rms}_{\\rm cmb}$')
-ax.set_yscale('log')
-ax.set_xscale('log')
-plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
-plt.rcParams["figure.figsize"] = [15,10]
+
 if myfdip == 0:
     plt.title("All $f_{dip}$")
 elif myfdip == 1: 
@@ -1043,25 +731,10 @@ fout.write("IMACd  1/5  "+delim+str((10**c1_imacd_dipcmb)*P0**0.20)+"\n")
 fout.write("IMACi  3/10 "+delim+str((10**c1_imaci_dipcmb)*P0**0.30)+"\n")
 fout.close()
 
-plt.clf()
-ax  = plt.gca()
-plt.xlim([xmin,xmax])
-plt.ylim([5e-6,0.05])
-if datadict["A"]:
-    plt.scatter(PA  ,LeAdipcmb/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),
-                edgecolor='orange',label="Aubert et al (2009)")
-if datadict["Y"]:
-    plt.scatter(PY  ,LeYdipcmb/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds"),
-                edgecolor='red'   ,label="Yadav et al (2016)")
-if datadict["L"]:
-    plt.scatter(PC  ,LeCdipcmb/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues"),
-                edgecolor='blue'  ,label="Leeds")
-if datadict["UC"]:
-    plt.scatter(PUC ,LeUCdipcmb/fohmUC**0.5,s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),
-                edgecolor='purple',label="Christensen 0F")
-if datadict["UCt"]:
-    plt.scatter(PUCt,LeUCtdipcmb/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),
-                edgecolor='purple',label="Christensen FF")
+# Plot simulations
+ax, legend_xpos, legend_ypos = b.plotSimulations(datadict=datadict, alldatadict=alldatadict, earthdict=earthdict,
+                                                 field="dipCMB",
+                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2])
 plt.loglog(Pfit, fitdipcmb, color="black", lw=lw_fit)
 #           label="$m =$"+str(np.round(mdipcmb ,2))+"$\pm$"+str(np.round(resdipcmb ,2))+", SSR="+str(np.round(ssrdipcmb,2)))
 #plt.loglog(Pfit, fitdipcmb_3sdp, c="k", ls=':', lw=1.)
@@ -1092,29 +765,6 @@ if "MAC" in plt_extrap_scalings:
     else:
         plt.loglog(Pfit, fitmac, color=lc_fit[idxMAC],linestyle=ls_fit[idxMAC], lw=lw_fit, label="$m=1/4$ (MAC)")
 
-ax.add_patch(Rectangle(xy=(P_earth_min,Le_earth_dipmin) ,width=(P_earth_max-P_earth_min), height=(Le_earth_dipmax-Le_earth_dipmin),
-             linewidth=1, color='black', fill=True))
-
-legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
-if datadict["A"]:
-    plt.text(legend_xpos, 0.95, "$m$  = "+str(np.round(mAdipcmb,2)) +"$\pm$"+str(np.round(resAdipcmb,2)) +", SSR="+str(np.round(ssrAdipcmb[0],2)),
-             transform=ax.transAxes, color='orange')
-if datadict["Y"]:
-    plt.text(legend_xpos, 0.90, "$m$  = "+str(np.round(mYdipcmb,2)) +"$\pm$"+str(np.round(resYdipcmb,2)) +", SSR="+str(np.round(ssrYdipcmb[0],2)),
-             transform=ax.transAxes, color='red')
-if datadict["L"]:
-    plt.text(legend_xpos, 0.85, "$m$  = "+str(np.round(mCdipcmb,2)) +"$\pm$"+str(np.round(resCdipcmb,2)) +", SSR="+str(np.round(ssrCdipcmb[0],2)),
-             transform=ax.transAxes, color='blue')
-if datadict["UC"]:
-    plt.text(legend_xpos, 0.80, "$m$v = "+str(np.round(mUCdipcmb,2))+"$\pm$"+str(np.round(resUCdipcmb,2))+", SSR="+str(np.round(ssrUCdipcmb[0],2)),
-             transform=ax.transAxes, color='purple')
-if datadict["UCt"]:
-    plt.text(legend_xpos, 0.75, "$m$^ = "+str(np.round(mUCtdipcmb,2))+"$\pm$"+str(np.round(resUCtdipcmb,2))+", SSR="+str(np.round(ssrUCtdipcmb[0],2)),
-             transform=ax.transAxes, color='purple')
-plt.text(legend_xpos, 0.70, "$m$  = "+str(np.round(mdipcmb,2))  +"$\pm$"+str(np.round(resdipcmb,2))  +", SSR="+str(np.round(ssrdipcmb[0],2)),
-         transform=ax.transAxes, color='black')
-cbar = plt.colorbar()
-cbar.set_label("log $Re$")
 plt.xlabel('$p_A$')
 if myfohm == 0: 
     plt.ylabel('$Le_{\\rm{cmb}}^{l=1}/f_{ohm}^{1/2}$')
@@ -1141,7 +791,6 @@ file2 += ".pdf"
 file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
-
 ##########################################################
 # Zoomed figs plotted using subfigure
 ##########################################################
@@ -1152,29 +801,31 @@ plt.subplot(3,1,1)
 ax  = plt.gca()
 plt.xlim([1e-10,1e-3])
 plt.ylim([1e-4,0.2])
-if datadict["A"]:
-    ax.scatter(PA  ,LeA/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),edgecolor='orange',label="Aubert et al (2009)")
-if datadict["Y"]:
-    ax.scatter(PY  ,LeY/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds")   ,edgecolor='red'   ,label="Yadav et al (2016)")
-if datadict["L"]:
-    ax.scatter(PC  ,LeC/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  ,label="Leeds")
-if datadict["UC"]:
-    ax.scatter(PUC ,LeUC/fohmUC**0.5,s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen 0F")
-if datadict["UCt"]:
-    ax.scatter(PUCt,LeUCt/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple',label="Christensen FF")
+
+for key in datadict:
+    if datadict[key]["plot"]:
+        plt.scatter(datadict[key]["p"], datadict[key]["rmsINT"]["Le"]/datadict[key]["fohm"]**0.5,
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
 plt.loglog(Pfit , fitall, color="black")
 plt.loglog(5e-12 , 2e-4, marker="s", markersize=30)
-if datadict["A"]:
-    plt.text(0.05, 0.90, "$m$  = "+str(np.round(mA,2)) +"$\pm$"+str(np.round(resA,2)) +", SSR="+str(np.round(ssrA[0],2)), transform=ax.transAxes, color='orange')
-if datadict["Y"]:
-    plt.text(0.05, 0.84, "$m$  = "+str(np.round(mY,2)) +"$\pm$"+str(np.round(resY,2)) +", SSR="+str(np.round(ssrY[0],2)), transform=ax.transAxes, color='red')
-if datadict["L"]:
-    plt.text(0.05, 0.78, "$m$  = "+str(np.round(mC,2)) +"$\pm$"+str(np.round(resC,2)) +", SSR="+str(np.round(ssrC[0],2)), transform=ax.transAxes, color='blue')
-if datadict["UC"]:
-    plt.text(0.05, 0.72, "$m$v = "+str(np.round(mUC,2))+"$\pm$"+str(np.round(resUC,2))+", SSR="+str(np.round(ssrUC[0],2)), transform=ax.transAxes, color='purple')
-if datadict["UCt"]:
-    plt.text(0.05, 0.66, "$m$^ = "+str(np.round(mUCt,2))+"$\pm$"+str(np.round(resUCt,2))+", SSR="+str(np.round(ssrUCt[0],2)), transform=ax.transAxes, color='purple')
-plt.text(0.05, 0.61, "$m$  = "+str(np.round(mall,2))+"$\pm$"+str(np.round(resall,2))+", SSR="+str(np.round(ssrall[0],2)), transform=ax.transAxes, color='black')
+
+legend_xpos = 0.05
+legend_ypos = 0.95; legend_dy   = 0.06
+iplt = 0
+for key in datadict:
+    if datadict[key]["plot"]:
+        plt.text(legend_xpos, legend_ypos-iplt*legend_dy,
+                 "$m$  = "+str(np.round(datadict[key]["rmsINT"]["m"],2)) +\
+                 "$\pm$"+str(np.round(datadict[key]["rmsINT"]["res"],2)) +\
+                 ", SSR="+str(np.round(datadict[key]["rmsINT"]["ssr"],2)),
+                 transform=ax.transAxes, color=datadict[key]["plotp"]["edgecolor"])
+        iplt += 1
+plt.text(legend_xpos, legend_ypos-iplt*legend_dy, "$m$  = "+str(np.round(alldatadict["rmsINT"]["m"],2))+\
+                                                  "$\pm$"+str(np.round(alldatadict["rmsINT"]["res"],2))+\
+                                                  ", SSR="+str(np.round(alldatadict["rmsINT"]["ssr"],2)),
+                                                  transform=ax.transAxes, color='black')
 if myfohm == 0: 
     plt.ylabel('$Le_t^{rms}/f_{ohm}^{1/2}$')
 elif myfohm == 1: 
@@ -1198,29 +849,29 @@ plt.subplot(3,1,2)
 ax  = plt.gca()
 plt.xlim([1e-10,1e-3])
 plt.ylim([1e-4,0.2])
-if datadict["A"]:
-    ax.scatter(PA  ,LeArmscmb/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),edgecolor='orange')
-if datadict["Y"]:
-    ax.scatter(PY  ,LeYrmscmb/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds")   ,edgecolor='red'   )
-if datadict["L"]:
-    ax.scatter(PC  ,LeCrmscmb/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  )
-if datadict["UC"]:
-    ax.scatter(PUC ,LeUCrmscmb/fohmUC**0.5,s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple')
-if datadict["UCt"]:
-    ax.scatter(PUCt,LeUCtrmscmb/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple')
+
+for key in datadict:
+    if datadict[key]["plot"]:
+        plt.scatter(datadict[key]["p"], datadict[key]["rmsCMB"]["Le"]/datadict[key]["fohm"]**0.5,
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
 plt.loglog(Pfit,fitrmscmb,color="black")
 plt.loglog(5e-12 , 2e-4, marker="s", markersize=30)
-if datadict["A"]:
-    plt.text(0.05, 0.90, "$m$  = "+str(np.round(mArmscmb,2)) +"$\pm$"+str(np.round(resArmscmb,2)) +", SSR="+str(np.round(ssrArmscmb[0],2)) , transform=ax.transAxes, color='orange')
-if datadict["Y"]:
-    plt.text(0.05, 0.84, "$m$  = "+str(np.round(mYrmscmb,2)) +"$\pm$"+str(np.round(resYrmscmb,2)) +", SSR="+str(np.round(ssrYrmscmb[0],2)) , transform=ax.transAxes, color='red')
-if datadict["L"]:
-    plt.text(0.05, 0.78, "$m$  = "+str(np.round(mCrmscmb,2)) +"$\pm$"+str(np.round(resCrmscmb,2)) +", SSR="+str(np.round(ssrCrmscmb[0],2)) , transform=ax.transAxes, color='blue')
-if datadict["UC"]:
-    plt.text(0.05, 0.72, "$m$v = "+str(np.round(mUCrmscmb,2))+"$\pm$"+str(np.round(resUCrmscmb,2))+", SSR="+str(np.round(ssrUCrmscmb[0],2)), transform=ax.transAxes, color='purple')
-if datadict["UCt"]:
-    plt.text(0.05, 0.66, "$m$^ = "+str(np.round(mUCtrmscmb,2))+"$\pm$"+str(np.round(resUCtrmscmb,2))+", SSR="+str(np.round(ssrUCtrmscmb[0],2)), transform=ax.transAxes, color='purple')
-plt.text(0.05, 0.62, "$m$  = "+str(np.round(mrmscmb,2))  +"$\pm$"+str(np.round(resrmscmb,2))  +", SSR="+str(np.round(ssrrmscmb[0],2))  , transform=ax.transAxes, color='black')
+
+legend_ypos = 0.95; legend_dy   = 0.06
+iplt = 0
+for key in datadict:
+    if datadict[key]["plot"]:
+        plt.text(legend_xpos, legend_ypos-iplt*legend_dy,
+                 "$m$  = "+str(np.round(datadict[key]["rmsCMB"]["m"],2)) +\
+                 "$\pm$"+str(np.round(datadict[key]["rmsCMB"]["res"],2)) +\
+                 ", SSR="+str(np.round(datadict[key]["rmsCMB"]["ssr"],2)),
+                 transform=ax.transAxes, color=datadict[key]["plotp"]["edgecolor"])
+        iplt += 1
+plt.text(legend_xpos, legend_ypos-iplt*legend_dy, "$m$  = "+str(np.round(alldatadict["rmsCMB"]["m"],2))+\
+                                                  "$\pm$"+str(np.round(alldatadict["rmsCMB"]["res"],2))+\
+                                                  ", SSR="+str(np.round(alldatadict["rmsCMB"]["ssr"],2)), transform=ax.transAxes, color='black')
 if myfohm == 0: 
     plt.ylabel('$Le_{cmb}^{rms}/f_{ohm}^{1/2}$')
 elif myfohm == 1: 
@@ -1236,39 +887,33 @@ plt.subplot(3,1,3)
 ax  = plt.gca()
 plt.xlim([1e-10,1e-3])
 plt.ylim([1e-4,0.2])
-if datadict["A"]:
-    ax.scatter(PA  ,LeAdipcmb/fohmA**0.5  ,s=150,marker="^",c=np.log10(ColA) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Oranges"),edgecolor='orange')
-if datadict["Y"]:
-    ax.scatter(PY  ,LeYdipcmb/fohmY**0.5  ,s=150,marker="o",c=np.log10(ColY) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Reds")   ,edgecolor='red'   )
-if datadict["L"]:
-    ax.scatter(PC  ,LeCdipcmb/fohmC**0.5  ,s=150,marker="*",c=np.log10(ColC) ,vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Blues")  ,edgecolor='blue'  )
-if datadict["UC"]:
-    ax.scatter(PUC ,LeUCdipcmb/fohmUC**0.5,s=150,marker="v",c=np.log10(ColU),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple')
-if datadict["UCt"]:
-    ax.scatter(PUCt,LeUCtdipcmb/fohmUCt**0.5,s=150,marker="^",c=np.log10(ColUt),vmin=Cmin,vmax=Cmax,cmap=plt.get_cmap("Purples"),edgecolor='purple')
+
+for key in datadict:
+    if datadict[key]["plot"]:
+        plt.scatter(datadict[key]["p"], datadict[key]["dipCMB"]["Le"]/datadict[key]["fohm"]**0.5,
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
 plt.loglog(Pfit,fitdipcmb,color="black")
 if (calc_prefac_err):
     plt.loglog(Pfit,fitdipcmb_1sdp,c='k',ls=':',lw=1.)
     plt.loglog(Pfit,fitdipcmb_1sdm,c='k',ls=':',lw=1.)
     #plt.loglog(Pfit,fitdipcmb_3sdp,c='k',ls='--',lw=1.)
     #plt.loglog(Pfit,fitdipcmb_3sdm,c='k',ls='--',lw=1.)
-if datadict["A"]:
-    plt.text(0.05, 0.90, "$m$ = "+str(np.round(mAdipcmb,2)) +"$\pm$"+str(np.round(resAdipcmb,2)) +", SSR="+str(np.round(ssrAdipcmb[0],2)),
-             transform=ax.transAxes, color='orange')
-if datadict["Y"]:
-    plt.text(0.05, 0.84, "$m$ = "+str(np.round(mYdipcmb,2)) +"$\pm$"+str(np.round(resYdipcmb,2)) +", SSR="+str(np.round(ssrYdipcmb[0],2)),
-             transform=ax.transAxes, color='red')
-if datadict["L"]:
-    plt.text(0.05, 0.78, "$m$ = "+str(np.round(mCdipcmb,2)) +"$\pm$"+str(np.round(resCdipcmb,2)) +", SSR="+str(np.round(ssrCdipcmb[0],2)),
-             transform=ax.transAxes, color='blue')
-if datadict["UC"]:
-    plt.text(0.05, 0.72, "$m$v = "+str(np.round(mUCdipcmb,2))+"$\pm$"+str(np.round(resUCdipcmb,2))+", SSR="+str(np.round(ssrUCdipcmb[0],2)),
-             transform=ax.transAxes, color='purple')
-if datadict["UCt"]:
-    plt.text(0.05, 0.66, "$m$^ = "+str(np.round(mUCtdipcmb,2))+"$\pm$"+str(np.round(resUCtdipcmb,2))+", SSR="+str(np.round(ssrUCtdipcmb[0],2)),
-             transform=ax.transAxes, color='purple')
-plt.text(0.05, 0.61, "$m$ = "+str(np.round(mdipcmb,2))  +"$\pm$"+str(np.round(resdipcmb,2))  +", SSR="+str(np.round(ssrdipcmb[0],2)),
-         transform=ax.transAxes, color='black')
+
+legend_ypos = 0.95; legend_dy   = 0.06
+iplt = 0
+for key in datadict:
+    if datadict[key]["plot"]:
+        plt.text(legend_xpos, legend_ypos-iplt*legend_dy,
+                 "$m$  = "+str(np.round(datadict[key]["dipCMB"]["m"],2))+\
+                 "$\pm$"+str(np.round(datadict[key]["dipCMB"]["res"],2))+\
+                 ", SSR="+str(np.round(datadict[key]["dipCMB"]["ssr"],2)),
+                 transform=ax.transAxes, color=datadict[key]["plotp"]["edgecolor"])
+        iplt += 1
+plt.text(0.05, 0.61, "$m$ = "+str(np.round(alldatadict["dipCMB"]["m"],2))+\
+                              "$\pm$"+str(np.round(alldatadict["dipCMB"]["res"],2))+\
+                              ", SSR="+str(np.round(alldatadict["dipCMB"]["ssr"],2)), transform=ax.transAxes, color='black')
 plt.text(0.05, 0.56, "$\sigma$ = "+str(np.round(c_sd,4)), transform=ax.transAxes, color='black')
 plt.xlabel('$P_A$')
 if myfohm == 0: 
