@@ -57,7 +57,9 @@ def getEarthEstimates(quiet=True):
 def getPlotProperties(datadict):
     for key in datadict:
         if datadict[key]["plot"]:
-            datadict[key]["plotp"]["Col"] = datadict[key]["Rm"]/datadict[key]["Pm"]
+            # CD - CHK THIS!!!
+            datadict[key]["plotp"]["Col"] = np.array(datadict[key]['d']["Rm"])/np.array(datadict[key]['d']["Pm"])
+            print('PLOTPROPS: ',key)
             if (datadict[key]["dataset"]=="L"):
                 datadict[key]["plotp"]["marker"] = "*"
                 datadict[key]["plotp"]["size"] = 150
@@ -88,12 +90,24 @@ def getPlotProperties(datadict):
                 datadict[key]["plotp"]["cmap"] = "Reds"
                 datadict[key]["plotp"]["edgecolor"] = "red"
                 datadict[key]["plotp"]["label"] = "Yadav et al (2010)"
-            elif (datadict[key]["dataset"]=="A17"):
-                print("Symbol properties to be chosen")
             elif (datadict[key]["dataset"]=="APath"):
-                print("Symbol properties to be chosen")
+                datadict[key]["plotp"]["marker"] = "D"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Greys"
+                datadict[key]["plotp"]["edgecolor"] = "grey"
+                datadict[key]["plotp"]["label"] = "Aubert et al (2017); Aubert (2019)"
             elif (datadict[key]["dataset"]=="S"):
-                print("Symbol properties to be chosen")
+                datadict[key]["plotp"]["marker"] = "*"
+                datadict[key]["plotp"]["size"] = 150
+                datadict[key]["plotp"]["cmap"] = "Greens"
+                datadict[key]["plotp"]["edgecolor"] = "green"
+                datadict[key]["plotp"]["label"] = "Schwaiger et al (2019)"
+            #elif (datadict[key]["dataset"]=="A17"):
+            #    print("Symbol properties to be chosen")
+            #elif (datadict[key]["dataset"]=="APath"):
+            #    print("Symbol properties to be chosen")
+            #elif (datadict[key]["dataset"]=="S"):
+            #    print("Symbol properties to be chosen")
             else:
                 raise ValueError("Not valid dataset")
 
@@ -117,7 +131,7 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
 
     for key in datadict:
         if datadict[key]["plot"]:
-            plt.scatter(datadict[key]["p"], datadict[key][field]["Le"]/datadict[key]["fohm"]**0.5,
+            plt.scatter(datadict[key]['d']["p"], datadict[key][field]["Le"]/datadict[key]['d']["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=cbarmin, vmax=cbarmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"])
@@ -144,12 +158,12 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
     # Plot color bar
     cbar = plt.colorbar()
     cbar.set_label("log $Re$")
-
+    
     ax.set_yscale('log')
     ax.set_xscale('log')
     plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
     plt.rcParams["figure.figsize"] = [15,10]
-
+    
     return ax, legend_xpos, legend_ypos
 
 def getPlotTitle(myfdip=None, fdip_range= [None]*2, myEr=None, Er_range=[None]*2):
@@ -495,11 +509,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
     # - Aubert 2017 and 2019 simulations
     # -------------------------        
     elif dataset == "APath":
-        cols_names = ['eps','E','rmsCMBtotal','RMSCMBl=12','RMSCMBl=1','p','Rm','Pm','fohm']
+        cols_names = ['eps','E','rmsCMBtotal','RMSCMBl=12','RMSCMBl=1','p','Rm','Pm','fohm','Els']
         
-        eps,E,rmsCMBtotal,RMSCMBl12,RMSCMBl1,p,Rm,Pm,fohm = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=5, unpack='true')
+        eps,E,rmsCMBtotal,RMSCMBl12,RMSCMBl1,p,Rm,Pm,fohm,Els = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=5, unpack='true')
         # Create data dictionary
-        data_dict = {'eps':eps,'E':E,'rmsCMBtotal':rmsCMBtotal,'RMSCMBl=12':RMSCMBl12,'RMSCMBl=1':RMSCMBl1,'p':p,'Rm':Rm,'Pm':Pm,'fohm':fohm}
+        data_dict = {'eps':eps,'E':E,'rmsCMBtotal':rmsCMBtotal,'RMSCMBl=12':RMSCMBl12,'RMSCMBl=1':RMSCMBl1,'p':p,'Rm':Rm,'Pm':Pm,'fohm':fohm,'Els':Els}
         # Create dataframe
         df = pd.DataFrame(data_dict, columns=cols_names)
 
@@ -514,11 +528,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
     # Schwaiger 2019
     # -------------------------        
     elif dataset == "S":
-        cols_names = ['E','Pm','rmsCMBtotal','RMSCMBl=1','fdip1','fdip2','p','Rm','fohm']
+        cols_names = ['E','Pm','rmsCMBtotal','RMSCMBl=1','fdip1','fdip2','p','Rm','fohm', 'Els', 'MEKE']
         
-        E,Pm,rmsCMBtotal,RMSCMBl1,fdip1,fdip2,p,Rm,fohm = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=0, unpack='true')
+        E,Pm,rmsCMBtotal,RMSCMBl1,fdip1,fdip2,p,Rm,fohm,Els,MEKE = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=0, unpack='true')
         # Create data dictionary
-        data_dict = {'E':E,'Pm':Pm,'rmsCMBtotal':rmsCMBtotal,'RMSCMBl=1':RMSCMBl1,'fdip1':fdip1,'fdip2':fdip2,'p':p,'Rm':Rm,'fohm':fohm}
+        data_dict = {'E':E,'Pm':Pm,'rmsCMBtotal':rmsCMBtotal,'RMSCMBl=1':RMSCMBl1,'fdip1':fdip1,'fdip2':fdip2,'p':p,'Rm':Rm,'fohm':fohm,'Els':Els,'MEKE':MEKE}
         # Create dataframe
         df = pd.DataFrame(data_dict, columns=cols_names)
 
@@ -548,6 +562,39 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         print('Number of models in dataset (original, filtered) = %s %s' %(len(df),len(new_df)))
  
     return new_df, datadict
+
+def plot_bdip(datadict, myfdip):
+
+    Cmax = np.log10(1000.0)#np.log10(np.max(Eall))
+    Cmin = np.log10(50.0)#np.log10(np.min(Eall))
+    
+    # - bdip vs buoyancy power
+    fig = plt.figure(figsize=(8,6))
+    ax = fig.add_subplot(111)
+    for key in datadict:
+        if datadict[key]["plot"]:
+            plt.scatter(datadict[key]["p"], datadict[key]["bdip"],
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
+    ax.set_xlabel('$P_A$')
+    ax.set_ylabel('$b_{dip}$')
+    plt.xlim([1.e-10,1.e-3]); plt.ylim([1.e+0,50.])
+    plt.xscale("log"); plt.yscale("log")
+    if myfdip == 0:
+        plt.title("All models")
+    elif myfdip == 1: 
+        plt.title("$f_{dip}>0.5$")
+    elif myfdip == 2:
+        #plt.title("$%.2f\leq f_{dip}\leq %.2f$" %(fdip_min,fdip_max))
+        plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
+    elif myfdip == 3:
+        plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
+
+    plt.show(block=False)
+    plt.tight_layout()
+    plt.savefig('./fig/bdip_vs_P_fdip='+str(myfdip)+'.pdf',format='pdf')
+    del ax
 
 #def plot(x, datadict):
     

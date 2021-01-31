@@ -7,9 +7,10 @@ from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':'12'})
 rc('text', usetex=False)
 
-# ------------------------
+# ---------------------------------------------------------------------------------------
 # --- Input parameters ---
-# ------------------------
+# ---------------------------------------------------------------------------------------
+
 calc_prefac_err = True # Calculate and plot prefactor error?
 myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
@@ -41,22 +42,21 @@ check_gauss_Led = False
 # Plot and analyse bdip?
 plt_bdip = False
 
-# ------------------------
-# ------------------------
+# ---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 # Create dictionaries of datasets
-datadict = {"L":{"plot":True, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "A":{"plot":True, "dataset":"A", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "Y":{"plot":True, "dataset":"Y", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "UC":{"plot":True, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+datadict = {"L":{  "plot":True, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "A":{  "plot":True, "dataset":"A", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "Y":{  "plot":True, "dataset":"Y", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "UC":{ "plot":True, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
             "UCt":{"plot":True, "dataset":"UCt", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "A17":{"plot":False, "dataset":"A17", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "APath":{"plot":False, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "S":{"plot":False, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
+            "APath":{"plot":True, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "S":{"plot":True, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
 
 alldatadict = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}
 
-earthdict = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "p":{}}
+earthdict   = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "p":{}}
 
 # Input datasets
 leedsname = "./all_LED_tave_NEW.csv"
@@ -206,12 +206,12 @@ if datadict["L"]["plot"]:
     PC       = 8.0 * (EC/PmC)**3 * (VDC+ODC) / volS
     bdipC    = LeC/LeCdipcmb
     # Store in dictionary and make fit
-    datadict["L"]["E"] = EC
-    datadict["L"]["Pm"] = PmC
-    datadict["L"]["Rm"] = RmC 
-    datadict["L"]["fohm"] = fohmC 
-    datadict["L"]["p"] = PC
-    datadict["L"]["bdip"] = bdipC
+    datadict["L"]['d']["E"] = EC
+    datadict["L"]['d']["Pm"] = PmC
+    datadict["L"]['d']["Rm"] = RmC 
+    datadict["L"]['d']["fohm"] = fohmC 
+    datadict["L"]['d']["p"] = PC
+    datadict["L"]['d']["bdip"] = bdipC
     datadict["L"]["rmsINT"]["Le"] = LeC; datadict["L"]["rmsCMB"]["Le"] = LeCrmscmb; datadict["L"]["dipCMB"]["Le"] = LeCdipcmb
 
     datadict["L"]["rmsINT"]["ssr"], datadict["L"]["rmsINT"]["m"], datadict["L"]["rmsINT"]["c"], datadict["L"]["rmsINT"]["res"] = b.fits(PC, LeC, fohmC)
@@ -229,13 +229,13 @@ if datadict["A"]:
     LeArmscmb    = LeA   /(bdipA*fdipA)
     lAall = 2.0*np.pi / (dAall + 0.5) # Jeans' formula.
     # Store in dictionary and make fit
-    datadict["A"]["E"] = EA
-    datadict["A"]["Pm"] = PmA
-    datadict["A"]["Rm"] = RmA
-    datadict["A"]["fohm"] = fohmA
-    datadict["A"]["p"] = PA
-    datadict["A"]["bdip"] = bdipA
-    datadict["A"]["rmsINT"]["Le"] = LeA; datadict["A"]["rmsCMB"]["Le"] = LeArmscmb; datadict["A"]["dipCMB"]["Le"] = LeAdipcmb
+    datadict["A"]["E"]       = EA
+    datadict["A"]["Pm"]      = PmA
+    datadict["A"]['d']["Rm"] = RmA
+    datadict["A"]['d']["fohm"]    = np.array(fohmA)
+    datadict["A"]["p"]       = PA
+    datadict["A"]["bdip"]    = bdipA
+    datadict["A"]["rmsINT"]["Le"] = np.array(LeA); datadict["A"]["rmsCMB"]["Le"] = LeArmscmb; datadict["A"]["dipCMB"]["Le"] = LeAdipcmb
 
     datadict["A"]["rmsINT"]["ssr"], datadict["A"]["rmsINT"]["m"], datadict["A"]["rmsINT"]["c"], datadict["A"]["rmsINT"]["res"] = b.fits(PA, LeA, fohmA)
     datadict["A"]["rmsCMB"]["ssr"], datadict["A"]["rmsCMB"]["m"], datadict["A"]["rmsCMB"]["c"], datadict["A"]["rmsCMB"]["res"] = b.fits(PA, LeArmscmb, fohmA)
@@ -246,7 +246,7 @@ if datadict["A"]:
 # Fundamental length scale is shell thickness, time scale is viscous diffusion time, magnetic field scale is "Elsasser scale".
 # NOTE that variables names "Els" are actually RMS field strengths!!
 if datadict["UC"]["plot"]:
-    EUC,PmUC,ElsUC,ElsrmscmbUC,ElsdipcmbUC,PUC,fohmUC,RmUC,EmagUC = np.loadtxt(christname, usecols=(0,4,26,27,29,31,32,10,19), skiprows=2, unpack='true')
+    EUC,PmUC,ElsUC,ElsrmscmbUC,ElsdipcmbUC,PUC,fohmUC,RmUC,EmagUC = np.loadtxt(christname, usecols=(0,4,26,27,29,31,32,10,19), skiprows=1, unpack='true')
     PUC       = 1e7 * PUC * EUC**3
     fohmUC    = fohmUC / 100
     if myfohm == 1:
@@ -256,12 +256,13 @@ if datadict["UC"]["plot"]:
     LeUCdipcmb= np.sqrt( (EUC/PmUC) ) * ElsdipcmbUC
     bdipUC    = LeUC/LeUCdipcmb
     # Store in dictionary and make fit
-    datadict["UC"]["E"] = EUC
-    datadict["UC"]["Pm"] = PmUC
-    datadict["UC"]["Rm"] = RmUC
-    datadict["UC"]["fohm"] = fohmUC
-    datadict["UC"]["p"] = PUC
-    datadict["UC"]["bdip"] = bdipUC
+    #datadict["UC"]["E"] = EUC
+    #datadict["UC"]["Pm"] = PmUC
+    #datadict["UC"]["Rm"] = RmUC
+    
+    datadict["UC"]['d']["fohm"] = fohmUC
+    datadict["UC"]['d']["p"]    = PUC
+    datadict["UC"]['d']["bdip"] = bdipUC
     datadict["UC"]["rmsINT"]["Le"] = LeUC; datadict["UC"]["rmsCMB"]["Le"] = LeUCrmscmb; datadict["UC"]["dipCMB"]["Le"] = LeUCdipcmb
 
     datadict["UC"]["rmsINT"]["ssr"], datadict["UC"]["rmsINT"]["m"], datadict["UC"]["rmsINT"]["c"], datadict["UC"]["rmsINT"]["res"] = b.fits(PUC, LeUC, fohmUC)
@@ -292,12 +293,12 @@ if datadict["UCt"]["plot"]:
         fohmUCt = np.ones(len(fohmUCt))
     bdipUCt    = LeUCt/LeUCtdipcmb
     # Store in dictionary and make fit
-    datadict["UCt"]["E"] = EUCt
-    datadict["UCt"]["Pm"] = PmUCt
-    datadict["UCt"]["Rm"] = RmUCt
-    datadict["UCt"]["fohm"] = fohmUCt
-    datadict["UCt"]["p"] = PUCt
-    datadict["UCt"]["bdip"] = bdipUCt
+    #datadict["UCt"]["E"] = EUCt
+    #datadict["UCt"]["Pm"] = PmUCt
+    #datadict["UCt"]["Rm"] = RmUCt
+    datadict["UCt"]['d']["fohm"] = fohmUCt
+    datadict["UCt"]['d']["p"] = PUCt
+    datadict["UCt"]['d']["bdip"] = bdipUCt
     datadict["UCt"]["rmsINT"]["Le"] = LeUCt; datadict["UCt"]["rmsCMB"]["Le"] = LeUCtrmscmb; datadict["UCt"]["dipCMB"]["Le"] = LeUCtdipcmb
 
     datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = b.fits(PUCt, LeUCt, fohmUCt)
@@ -327,12 +328,12 @@ if datadict["Y"]["plot"]:
     PY       = (EY)**3 * BWY   / b.shellVolume(0.35)
     bdipY    = LeY/LeYdipcmb
     # Store in dictionary and make fit
-    datadict["Y"]["E"] = EY
-    datadict["Y"]["Pm"] = PmY
-    datadict["Y"]["Rm"] = RmY
-    datadict["Y"]["fohm"] = fohmY
-    datadict["Y"]["p"] = PY
-    datadict["Y"]["bdip"] = bdipY
+    #datadict["Y"]["E"] = EY
+    #datadict["Y"]["Pm"] = PmY
+    datadict["Y"]['d']["Rm"] = RmY
+    datadict["Y"]['d']["fohm"] = fohmY
+    datadict["Y"]['d']["p"] = PY
+    datadict["Y"]['d']["bdip"] = bdipY
     datadict["Y"]["rmsINT"]["Le"] = LeY; datadict["Y"]["rmsCMB"]["Le"] = LeYrmscmb; datadict["Y"]["dipCMB"]["Le"] = LeYdipcmb
 
     datadict["Y"]["rmsINT"]["ssr"], datadict["Y"]["rmsINT"]["m"], datadict["Y"]["rmsINT"]["c"], datadict["Y"]["rmsINT"]["res"] = b.fits(PY, LeY, fohmY)
@@ -349,15 +350,17 @@ if datadict["Y"]["plot"]:
         print('***************************\n')
 
 if datadict['APath']["plot"]:
-    fohm_dum = datadict["APath"]['data']['fohm']
-    P_dum    = datadict["APath"]['data']['p']
-    E_dum    = datadict["APath"]['data']['E']
-    Pm_dum   = datadict["APath"]['data']['Pm']
-    Els_dum  = datadict["APath"]['data']['rmsCMBtotal']
-    Els12_dum  = datadict["APath"]['data']['RMSCMBl=12']
-    Els1_dum   = datadict["APath"]['data']['RMSCMBl=1']
+    fohm_dum = datadict["APath"]['d']['fohm']
+    P_dum    = datadict["APath"]['d']['p']
+    E_dum    = datadict["APath"]['d']['E']
+    Pm_dum   = datadict["APath"]['d']['Pm']
+    Els_dum  = datadict["APath"]['d']['Els']
+    Els12_dum  = datadict["APath"]['d']['rmsCMBtotal']
+    Els1_dum   = datadict["APath"]['d']['RMSCMBl=1']
+    
+    datadict["APath"]['d']['bdip'] = 0.0
 
-    datadict["APath"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_dum
+    datadict["APath"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum)   * Els_dum)
     datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els12_dum
     datadict["APath"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
 
@@ -366,18 +369,26 @@ if datadict['APath']["plot"]:
     datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = b.fits(P_dum, datadict["APath"]['dipCMB']['Le'], fohm_dum)
 
 if datadict['S']["plot"]:
-    fohm_dum   = datadict["S"]['data']['fohm']
-    P_dum   = datadict["S"]['data']['p']
-    E_dum   = datadict["S"]['data']['E']
-    Pm_dum  = datadict["S"]['data']['Pm']
-    Els_dum = datadict["S"]['data']['rmsCMBtotal']
-    Els1_dum  = datadict["S"]['data']['RMSCMBl=1']
+    fohm_dum   = datadict["S"]['d']['fohm']
+    P_dum   = datadict["S"]['d']['p']
+    E_dum   = datadict["S"]['d']['E']
+    Pm_dum  = datadict["S"]['d']['Pm']
+    Els_dum = datadict["S"]['d']['Els']
+    Els_cmb = datadict["S"]['d']['rmsCMBtotal']
+    Els1_dum  = datadict["S"]['d']['RMSCMBl=1']
 
-    datadict["S"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_dum
+    datadict["S"]['d']['bdip'] = 0.0
+
+    datadict["S"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum) * Els_dum)
+    datadict["S"]['rmsCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_cmb
     datadict["S"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
 
+    print(datadict["S"]['rmsINT']['Le'])
+
     datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = b.fits(P_dum, datadict["S"]['rmsINT']['Le'], fohm_dum)
+    datadict["S"]['rmsCMB']['ssr'], datadict["S"]['rmsCMB']['m'], datadict["S"]['rmsCMB']['c'], datadict["S"]['rmsCMB']['res'] = b.fits(P_dum, datadict["S"]['rmsCMB']['Le'], fohm_dum)
     datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = b.fits(P_dum, datadict["S"]['dipCMB']['Le'], fohm_dum)
+
 
 # Construct datasets of all simulations
 firstkey = True
@@ -385,24 +396,24 @@ for key in datadict:
     print("\nDataset : %s" %(key))
     if datadict[key]["plot"]:
         if firstkey:
-            Rmall    = datadict[key]["Rm"] 
-            Eall     = datadict[key]["E"]
+            Rmall    = datadict[key]['d']["Rm"] 
+            Eall     = datadict[key]['d']["E"]
             Leall    = datadict[key]["rmsINT"]["Le"]
             Lermscmb = datadict[key]["rmsCMB"]["Le"]
             Ledipcmb = datadict[key]["dipCMB"]["Le"]
-            PAall    = datadict[key]["p"]
-            fohmall  = datadict[key]["fohm"]
-            bdipall  = datadict[key]["bdip"]
+            PAall    = datadict[key]['d']["p"]
+            fohmall  = datadict[key]['d']["fohm"]
+            bdipall  = datadict[key]['d']["bdip"]
             firstkey = False
         else:
-            Rmall    = np.concatenate((Rmall,datadict[key]["Rm"]))
-            Eall     = np.concatenate((Eall,datadict[key]["E"]))
+            Rmall    = np.concatenate((Rmall,datadict[key]['d']["Rm"]))
+            Eall     = np.concatenate((Eall,datadict[key]['d']["E"]))
             Leall    = np.concatenate((Leall,datadict[key]["rmsINT"]["Le"]))
             Lermscmb = np.concatenate((Lermscmb,datadict[key]["rmsCMB"]["Le"]))
             Ledipcmb = np.concatenate((Ledipcmb,datadict[key]["dipCMB"]["Le"]))
-            PAall    = np.concatenate((PAall,datadict[key]["p"]))
-            fohmall  = np.concatenate((fohmall,datadict[key]["fohm"]))
-            bdipall  = np.concatenate((bdipall,datadict[key]["bdip"]))
+            PAall    = np.concatenate((PAall,datadict[key]['d']["p"]))
+            fohmall  = np.concatenate((fohmall,datadict[key]['d']["fohm"]))
+            bdipall  = np.concatenate((bdipall,datadict[key]['d']["bdip"]))
     else:
         print("Plot set to False.")
 
@@ -458,34 +469,7 @@ Cmin = np.log10(50.0)#np.log10(np.min(Eall))
 datadict = b.getPlotProperties(datadict)
 
 # - Plot bdip stuff
-if plt_bdip:
-    # - bdip vs buoyancy power
-    fig = plt.figure(figsize=(8,6))
-    ax = fig.add_subplot(111)
-    for key in datadict:
-        if datadict[key]["plot"]:
-            plt.scatter(datadict[key]["p"], datadict[key]["bdip"],
-                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
-                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
-                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
-    ax.set_xlabel('$P_A$')
-    ax.set_ylabel('$b_{dip}$')
-    plt.xlim([1.e-10,1.e-3]); plt.ylim([1.e+0,50.])
-    plt.xscale("log"); plt.yscale("log")
-    if myfdip == 0:
-        plt.title("All models")
-    elif myfdip == 1: 
-        plt.title("$f_{dip}>0.5$")
-    elif myfdip == 2:
-        #plt.title("$%.2f\leq f_{dip}\leq %.2f$" %(fdip_min,fdip_max))
-        plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
-    elif myfdip == 3:
-        plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
-
-    plt.show(block=False)
-    plt.tight_layout()
-    plt.savefig('./fig/bdip_vs_P_fdip='+fdipn+'.pdf',format='pdf')
-    del ax
+if plt_bdip: b.plot_bdip(datadict, myfdip)
 
 
 # --- Store fitted values in output files
@@ -589,6 +573,10 @@ file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
 
+##########################
+# Brms cmb plots
+##########################
+
 # Calculate prefactors of Brms cmb
 c1_En_rmscmb = np.mean(np.log10(Lermscmb/fohmall**0.5) - (1/3.)*np.log10(PAall))
 fitEn = 10**c1_En_rmscmb * Pfit**(1/3.)
@@ -605,10 +593,6 @@ fitimacd = 10**c1_imacd_rmscmb * Pfit**0.20
 c1_imaci_rmscmb = np.mean(np.log10(Lermscmb/fohmall**0.5) - 0.30*np.log10(PAall))
 print('CMB RMS, IMACi m=3/10=0.30', c1_imaci_rmscmb)
 fitimaci = 10**c1_imaci_rmscmb * Pfit**0.30
-
-##########################
-# Brms cmb plots
-##########################
 
 # Plot simulations
 ax, legend_xpos, legend_ypos = b.plotSimulations(datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsCMB",
@@ -791,6 +775,7 @@ file2 += ".pdf"
 file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
+
 ##########################################################
 # Zoomed figs plotted using subfigure
 ##########################################################
@@ -804,7 +789,7 @@ plt.ylim([1e-4,0.2])
 
 for key in datadict:
     if datadict[key]["plot"]:
-        plt.scatter(datadict[key]["p"], datadict[key]["rmsINT"]["Le"]/datadict[key]["fohm"]**0.5,
+        plt.scatter(datadict[key]['d']["p"], datadict[key]["rmsINT"]["Le"]/datadict[key]['d']["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
@@ -852,7 +837,7 @@ plt.ylim([1e-4,0.2])
 
 for key in datadict:
     if datadict[key]["plot"]:
-        plt.scatter(datadict[key]["p"], datadict[key]["rmsCMB"]["Le"]/datadict[key]["fohm"]**0.5,
+        plt.scatter(datadict[key]['d']["p"], datadict[key]["rmsCMB"]["Le"]/datadict[key]['d']["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
@@ -890,7 +875,7 @@ plt.ylim([1e-4,0.2])
 
 for key in datadict:
     if datadict[key]["plot"]:
-        plt.scatter(datadict[key]["p"], datadict[key]["dipCMB"]["Le"]/datadict[key]["fohm"]**0.5,
+        plt.scatter(datadict[key]['d']["p"], datadict[key]["dipCMB"]["Le"]/datadict[key]['d']["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
