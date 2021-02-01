@@ -22,7 +22,7 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2.,1.e+9]
+    EMoEK_range = [2e-15,1.e+19]
 else:
     EMoEK_range = None
     
@@ -52,7 +52,7 @@ datadict = {"L":{  "plot":True, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{},
             "UC":{ "plot":True, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
             "UCt":{"plot":True, "dataset":"UCt", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
             "APath":{"plot":True, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "S":{"plot":True, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
+            "S":{"plot":False, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
 
 alldatadict = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}
 
@@ -229,6 +229,7 @@ if datadict["A"]:
     LeArmscmb    = LeA   /(bdipA*fdipA)
     lAall = 2.0*np.pi / (dAall + 0.5) # Jeans' formula.
     # Store in dictionary and make fit
+    
     datadict["A"]["E"]       = EA
     datadict["A"]["Pm"]      = PmA
     datadict["A"]['d']["Rm"] = RmA
@@ -249,6 +250,8 @@ if datadict["UC"]["plot"]:
     EUC,PmUC,ElsUC,ElsrmscmbUC,ElsdipcmbUC,PUC,fohmUC,RmUC,EmagUC = np.loadtxt(christname, usecols=(0,4,26,27,29,31,32,10,19), skiprows=1, unpack='true')
     PUC       = 1e7 * PUC * EUC**3
     fohmUC    = fohmUC / 100
+    
+    
     if myfohm == 1:
         fohmUC = np.ones(len(fohmUC))
     LeUC      = np.sqrt( (EUC/PmUC) ) * ElsUC        # Eqn 14 of CA06
@@ -260,6 +263,7 @@ if datadict["UC"]["plot"]:
     #datadict["UC"]["Pm"] = PmUC
     #datadict["UC"]["Rm"] = RmUC
     
+   
     datadict["UC"]['d']["fohm"] = fohmUC
     datadict["UC"]['d']["p"]    = PUC
     datadict["UC"]['d']["bdip"] = bdipUC
@@ -297,9 +301,15 @@ if datadict["UCt"]["plot"]:
     #datadict["UCt"]["Pm"] = PmUCt
     #datadict["UCt"]["Rm"] = RmUCt
     datadict["UCt"]['d']["fohm"] = fohmUCt
-    datadict["UCt"]['d']["p"] = PUCt
+    datadict["UCt"]['d']["p"]    = PUCt
     datadict["UCt"]['d']["bdip"] = bdipUCt
     datadict["UCt"]["rmsINT"]["Le"] = LeUCt; datadict["UCt"]["rmsCMB"]["Le"] = LeUCtrmscmb; datadict["UCt"]["dipCMB"]["Le"] = LeUCtdipcmb
+
+    print('PUC = ', PUCt)
+    print('LUC = ', LeUCt)
+    
+    print(datadict["UCt"]['d']['Rm'])
+    print(RmUCt)
 
     datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = b.fits(PUCt, LeUCt, fohmUCt)
     datadict["UCt"]["rmsCMB"]["ssr"], datadict["UCt"]["rmsCMB"]["m"], datadict["UCt"]["rmsCMB"]["c"], datadict["UCt"]["rmsCMB"]["res"] = b.fits(PUCt, LeUCtrmscmb, fohmUCt)
@@ -330,7 +340,7 @@ if datadict["Y"]["plot"]:
     # Store in dictionary and make fit
     #datadict["Y"]["E"] = EY
     #datadict["Y"]["Pm"] = PmY
-    datadict["Y"]['d']["Rm"] = RmY
+    datadict["Y"]['d']["Rm"]   = np.array(datadict["Y"]["d"]['Re']) / np.array(datadict["Y"]["d"]['Pm'])
     datadict["Y"]['d']["fohm"] = fohmY
     datadict["Y"]['d']["p"] = PY
     datadict["Y"]['d']["bdip"] = bdipY
@@ -383,7 +393,6 @@ if datadict['S']["plot"]:
     datadict["S"]['rmsCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_cmb
     datadict["S"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
 
-    print(datadict["S"]['rmsINT']['Le'])
 
     datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = b.fits(P_dum, datadict["S"]['rmsINT']['Le'], fohm_dum)
     datadict["S"]['rmsCMB']['ssr'], datadict["S"]['rmsCMB']['m'], datadict["S"]['rmsCMB']['c'], datadict["S"]['rmsCMB']['res'] = b.fits(P_dum, datadict["S"]['rmsCMB']['Le'], fohm_dum)
