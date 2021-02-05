@@ -21,6 +21,61 @@ def idxStr(l1, s):
         i += 1
     return idx
 
+def convertDictKeys(indict):
+    """
+    Convert keys of input dictionary into
+    numpy arrays
+    """
+    for key in indict:
+        indict[key] = np.asarray(indict[key])
+    return indict
+
+def combineDataDict(datadict, quiet=False):
+    """
+    This function merges all datasets in datadict
+    and returns a merged dictionary.
+    """
+    alldatadict = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}
+
+    firstkey = True
+    for key in datadict:
+        if not quiet:
+            print("\nDataset : %s" %(key))
+        if datadict[key]["plot"]:
+            if firstkey:
+                Rmall    = datadict[key]["Rm"] 
+                Eall     = datadict[key]["E"]
+                Leall    = datadict[key]["rmsINT"]["Le"]
+                Lermscmb = datadict[key]["rmsCMB"]["Le"]
+                Ledipcmb = datadict[key]["dipCMB"]["Le"]
+                PAall    = datadict[key]["p"]
+                fohmall  = datadict[key]["fohm"]
+                bdipall  = datadict[key]["bdip"]
+                firstkey = False
+            else:
+                Rmall    = np.concatenate((Rmall,datadict[key]["Rm"]))
+                Eall     = np.concatenate((Eall,datadict[key]["E"]))
+                Leall    = np.concatenate((Leall,datadict[key]["rmsINT"]["Le"]))
+                Lermscmb = np.concatenate((Lermscmb,datadict[key]["rmsCMB"]["Le"]))
+                Ledipcmb = np.concatenate((Ledipcmb,datadict[key]["dipCMB"]["Le"]))
+                PAall    = np.concatenate((PAall,datadict[key]["p"]))
+                fohmall  = np.concatenate((fohmall,datadict[key]["fohm"]))
+                bdipall  = np.concatenate((bdipall,datadict[key]["bdip"]))
+        else:
+            if not quiet:
+                print("Plot set to False.")
+
+    alldatadict["Rm"] = Rmall
+    alldatadict["E"] = Eall
+    alldatadict["rmsINT"]["Le"] = Leall
+    alldatadict["rmsCMB"]["Le"] = Lermscmb
+    alldatadict["dipCMB"]["Le"] = Ledipcmb 
+    alldatadict["p"] = PAall
+    alldatadict["fohm"] = fohmall
+    alldatadict["bdip"] = bdipall 
+
+    return alldatadict
+
 def getEarthEstimates(quiet=True):
     # Brmax = (a/r)^3 g10
     ri    = 1221e3
@@ -57,8 +112,7 @@ def getEarthEstimates(quiet=True):
 def getPlotProperties(datadict):
     for key in datadict:
         if datadict[key]["plot"]:
-            # CD - CHK THIS!!!
-            datadict[key]["plotp"]["Col"] = np.array(datadict[key]['d']["Rm"])/np.array(datadict[key]['d']["Pm"])
+            datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
             if (datadict[key]["dataset"]=="L"):
                 datadict[key]["plotp"]["marker"] = "*"
                 datadict[key]["plotp"]["size"] = 150
@@ -130,7 +184,7 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
 
     for key in datadict:
         if datadict[key]["plot"]:
-            plt.scatter(datadict[key]['d']["p"], datadict[key][field]["Le"]/datadict[key]['d']["fohm"]**0.5,
+            plt.scatter(datadict[key]["p"], datadict[key][field]["Le"]/datadict[key]["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=cbarmin, vmax=cbarmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"])
@@ -153,7 +207,7 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
 
     plt.text(legend_xpos, legend_ypos-iplt*legend_dy, "$m$  = "+str(np.round(alldatadict[field]["m"],2))+\
              "$\pm$"+str(np.round(alldatadict[field]["res"],2))+\
-             ", SSR="+str(np.round(alldatadict[field]["ssr"][0],2)), transform=ax.transAxes, color='black')
+             ", SSR="+str(np.round(alldatadict[field]["ssr"],2)), transform=ax.transAxes, color='black')
     # Plot color bar
     cbar = plt.colorbar()
     cbar.set_label("log $Re$")
@@ -203,9 +257,23 @@ def fits(P, Le, fohm):
         ssr = [0.]
         res = 0.
     else:
-        raise ValueError("1 data point. No fit possible")
+        raise ValueError("Only 1 data point. No fit is possible.")
 
     return ssr[0], m, c, res
+
+def getFitBounds(x, c, c_sd, m):
+    """
+    Get fit error bounds on the slope m.
+    c    : prefactor
+    c_sd : prefactor error
+    m    : slope
+    """
+    fit_1sdp = 10**(c+c_sd) * x**m
+    fit_1sdm = 10**(c-c_sd) * x**m
+    fit_3sdp = 10**(c+3.*c_sd) * x**m
+    fit_3sdm = 10**(c-3.*c_sd) * x**m
+
+    return fit_1sdp, fit_1sdm, fit_3sdp, fit_3sdm
 
 def shellVolume(ar):
     """
@@ -297,33 +365,191 @@ def saveFitValues(filename=None, datadict=None, alldatadict=None):
                str(np.round(alldatadict["dipCMB"]["ssr"],4))+"\n")
     fout.close()
 
-
-def get_fdip(infname=None, dataset="Leeds"):
-    """
-    Get value of fdip from main data file
-    CD - ARE WE DOING loadtxt TWICE??
-    """
-    if dataset == "Leeds":
-        df = pd.read_csv(infname)
-        fdip = df['cmb_diptyAve'].values
-    elif dataset == "Aubert":
-        cols_names = ['E','RaQ','Pr','Pm','chi','fi','Ro','Lo','bdip','fdip','lbar','tauDiss','p','fohm']
-        E,RaQ,Pr,Pm,chi,fi,Ro,Lo,bdip,fdip,lbar,tauDiss,p,fohm = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=1, unpack='true')
-    elif dataset == "Yadav":
-        cols_names = ['E','Ra','Pm','KE_pol','KE_tor','Re','Rol','Nu','ME_pol','ME_tor','Elsasser','Elsasser_CMB','Dip','Dip_CMB','Dip_CMB_l11','Buo_pow','Ohm_diss','l_bar_u','l_bar_B','run_time','l_max','r_max']
-        E,Ra,Pm,KE_pol,KE_tor,Re,Rol,Nu,ME_pol,ME_tor,Els,ElsCMB,Dip,DipCMB,DipCMBl11,Buo_pow,Ohm_diss,l_bar_u,l_bar_B,run_time,l_max,r_max = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names))), skiprows=1, unpack='true')
-        fdip = DipCMBl11
-    elif dataset == "Christensen":
-        cols_names = ['E','Ra','Rac','Pr','Pm','icc','lmax','nr','mc','Re','Rm','Ro','Rol','Ekin','po','ta','lm','mmd','Nu','Emag','ex','po1','pa','ta1','lm1','mmd1','B','Bsur','B12','Bdip','Bax','pow','jou','tmag','tvis','trun','tad','Tm','T2','R2R1','Filename']
-        E,Ra,Rac,Pr,Pm,icc,lmax,nr,mc,Re,Rm,Ro,Rol,Ekin,po,ta,lm,mmd,Nu,Emag,ex,po1,pa,ta1,lm1,mmd1,B,Bsur,B12,Bdip,Bax,pow,jou,tmag,tvis,trun,tad,Tm,T2,R2R1 = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names)-1)), skiprows=2, unpack='true')
-        fdip = Bdip/B12
-    elif dataset == "ChristensenT":
-        cols_names = ['E','Ra','Rac','Pr','Pm','icc','qs','lmax','nr','mc','Re','Rm','Ro','Rol','Ekin','po','ta','lm','mmd','Nu','Emag','ex','po1','pa','ta1','lm1','mmd1','B','Bsur','B12','Bdip','Bax','pow','jou','tmag','tvis','trun','tad','Tm','T2','vrat','Filename']
-        E,Ra,Rac,Pr,Pm,icc,qs,lmax,nr,mc,Re,Rm,Ro,Rol,Ekin,po,ta,lm,mmd,Nu,Emag,ex,po1,pa,ta1,lm1,mmd1,B,Bsur,B12,Bdip,Bax,pow,jou,tmag,tvis,trun,tad,Tm,T2,vrat = np.loadtxt(infname, usecols=tuple(np.arange(len(cols_names)-1)), skiprows=1, unpack='true')
-        fdip = Bdip/B12
+def savePrefacValues(filename=None, indict=None, l_prefac_err=False):
+    # Store pre-factors in output file
+    fout = open(filename, "w")
+    delim = "    "
+    fout.write("--- B rms ---\n")
+    fout.write("Scaling     "+delim+"Prefactor c1\n")
+    fout.write("IMA    1/3  "+delim+str(round(indict["rmsINT"]["cIMA"],10))+"\n")
+    fout.write("MAC    1/4  "+delim+str(round(indict["rmsINT"]["cMAC"],10))+"\n")
+    fout.write("IMAC   2/5  "+delim+str(round(indict["rmsINT"]["cIMAC"],10))+"\n")
+    fout.write("IMACd  1/5  "+delim+str(round(indict["rmsINT"]["cIMACd"],10))+"\n")
+    fout.write("IMACi  3/10 "+delim+str(round(indict["rmsINT"]["cIMACi"],10))+"\n")
+    fout.write("\n")
+    fout.write("--- B dip cmb ---\n")
+    if not l_prefac_err:
+        fout.write("Scaling     "+delim+"Prefactor c1\n")
+        fout.write("IMA    1/3  "+delim+str(round(indict["dipCMB"]["cIMA"],10))+"\n")
+        fout.write("MAC    1/4  "+delim+str(round(indict["dipCMB"]["cMAC"],10))+"\n")
+        fout.write("IMAC   2/5  "+delim+str(round(indict["dipCMB"]["cIMAC"],10))+"\n")
+        fout.write("IMACd  1/5  "+delim+str(round(indict["dipCMB"]["cIMACd"],10))+"\n")
+        fout.write("IMACi  3/10 "+delim+str(round(indict["dipCMB"]["cIMACi"],10))+"\n")
     else:
-        raise ValueError("Not valid dataset name provided.")
-    return fdip
+        fout.write("Scaling     "+delim+"Prefactor c1"+delim+" Sigma\n")
+        fout.write("IMA    1/3  "+delim+str(round(indict["dipCMB"]["cIMA"],10))+delim+str(round(indict["dipCMB"]["cIMA_sd"],10))+"\n")
+        fout.write("MAC    1/4  "+delim+str(round(indict["dipCMB"]["cMAC"],10))+delim+str(round(indict["dipCMB"]["cMAC_sd"],10))+"\n")
+        fout.write("IMAC   2/5  "+delim+str(round(indict["dipCMB"]["cIMAC"],10))+delim+str(round(indict["dipCMB"]["cIMAC_sd"],10))+"\n")
+        fout.write("IMACd  1/5  "+delim+str(round(indict["dipCMB"]["cIMACd"],10))+delim+str(round(indict["dipCMB"]["cIMACd_sd"],10))+"\n")
+        fout.write("IMACi  3/10 "+delim+str(round(indict["dipCMB"]["cIMACi"],10))+delim+str(round(indict["dipCMB"]["cIMACi_sd"],10))+"\n")
+    fout.write("\n")
+    fout.write("--- Check for VDM script on B dip cmb ---\n")
+    # Check for VDM script: Get Le for CMB dipole field at user-defined value of P
+    P0 = 1.e-12
+    fout.write("P0          "+delim+str(P0)+"\n")
+    fout.write("IMA    1/3  "+delim+str((10**indict["dipCMB"]["cIMA"])*P0**(1/3.))+"\n")
+    fout.write("MAC    1/4  "+delim+str((10**indict["dipCMB"]["cMAC"])*P0**0.25)+"\n")
+    fout.write("IMAC   2/5  "+delim+str((10**indict["dipCMB"]["cIMAC"])*P0**0.40)+"\n")
+    fout.write("IMACd  1/5  "+delim+str((10**indict["dipCMB"]["cIMACd"])*P0**0.20)+"\n")
+    fout.write("IMACi  3/10 "+delim+str((10**indict["dipCMB"]["cIMACi"])*P0**0.30)+"\n")
+    fout.close()
+
+def fitForceScalings(indict, quiet=False):
+    """
+    Calculates prefactor of all force scalings
+    and updates the dictionary
+    """
+    # - rms core field
+    indict["rmsINT"]["mIMA"] = 1/3.
+    indict["rmsINT"]["cIMA"] = np.mean(np.log10(indict["rmsINT"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsINT"]["mIMA"]*np.log10(indict["p"]))
+
+    c1_err_IMA = prefacError(indict["p"], indict["rmsINT"]["Le"]/indict["fohm"]**0.5,
+                            model=[10**indict["rmsINT"]["cIMA"],indict["rmsINT"]["mIMA"]], plot=False, quiet=False)
+    indict["rmsINT"]["cIMA_sd"] = c1_err_IMA[1]
+    if not quiet:
+        print('Core RMS, IMA   m=1/3 =0.33', indict["rmsINT"]["cIMA"])
+
+    indict["rmsINT"]["mMAC"] = 0.25
+    indict["rmsINT"]["cMAC"] = np.mean(np.log10(indict["rmsINT"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsINT"]["mMAC"]*np.log10(indict["p"]))
+    c1_err_MAC = prefacError(indict["p"], indict["rmsINT"]["Le"]/indict["fohm"]**0.5,
+                            model=[10**indict["rmsINT"]["cMAC"],indict["rmsINT"]["mMAC"]], plot=False, quiet=False)
+    indict["rmsINT"]["cMAC_sd"] = c1_err_MAC[1]
+    if not quiet:
+        print('Core RMS, MAC   m=1/4 =0.25', indict["rmsINT"]["cMAC"])
+
+    indict["rmsINT"]["mIMAC"] = 0.40
+    indict["rmsINT"]["cIMAC"] = np.mean(np.log10(indict["rmsINT"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsINT"]["mIMAC"]*np.log10(indict["p"]))
+    c1_err_IMAC = prefacError(indict["p"], indict["rmsINT"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["rmsINT"]["cIMAC"],indict["rmsINT"]["mIMAC"]], plot=False, quiet=False)
+    indict["rmsINT"]["cIMAC_sd"] = c1_err_IMAC[1]
+    if not quiet:
+        print('Core RMS, IMAC  m=2/5 =0.40', indict["rmsINT"]["cIMAC"])
+
+    indict["rmsINT"]["mIMACd"] = 0.20
+    indict["rmsINT"]["cIMACd"] = np.mean(np.log10(indict["rmsINT"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsINT"]["mIMACd"]*np.log10(indict["p"]))
+    c1_err_IMACd = prefacError(indict["p"], indict["rmsINT"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["rmsINT"]["cIMACd"],indict["rmsINT"]["mIMACd"]], plot=False, quiet=False)
+    indict["rmsINT"]["cIMACd_sd"] = c1_err_IMACd[1]
+    if not quiet:
+        print('Core RMS, IMACd m=1/5 =0.20', indict["rmsINT"]["cIMACd"])
+
+    indict["rmsINT"]["mIMACi"] = 0.30
+    indict["rmsINT"]["cIMACi"] = np.mean(np.log10(indict["rmsINT"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsINT"]["mIMACi"]*np.log10(indict["p"]))
+    c1_err_IMACi = prefacError(indict["p"], indict["rmsINT"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["rmsINT"]["cIMACi"],indict["rmsINT"]["mIMACi"]], plot=False, quiet=False)
+    indict["rmsINT"]["cIMACi_sd"] = c1_err_IMACi[1]
+    if not quiet:
+        print('Core RMS, IMACi m=3/10=0.30', indict["rmsINT"]["cIMACi"])
+
+    # - rms CMB field
+    indict["rmsCMB"]["mIMA"] = 1/3.
+    indict["rmsCMB"]["cIMA"] = np.mean(np.log10(indict["rmsCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsCMB"]["mIMA"]*np.log10(indict["p"]))
+    c1_err_IMA = prefacError(indict["p"], indict["rmsCMB"]["Le"]/indict["fohm"]**0.5,
+                            model=[10**indict["rmsCMB"]["cIMA"],indict["rmsCMB"]["mIMA"]], plot=False, quiet=False)
+    indict["rmsCMB"]["cIMA_sd"] = c1_err_IMA[1]
+    if not quiet:
+        print('CMB RMS, IMA   m=1/3 =0.33', indict["rmsCMB"]["cIMA"])
+
+    indict["rmsCMB"]["mMAC"] = 0.25
+    indict["rmsCMB"]["cMAC"] = np.mean(np.log10(indict["rmsCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsCMB"]["mMAC"]*np.log10(indict["p"]))
+    c1_err_MAC = prefacError(indict["p"], indict["rmsCMB"]["Le"]/indict["fohm"]**0.5,
+                            model=[10**indict["rmsCMB"]["cMAC"],indict["rmsCMB"]["mMAC"]], plot=False, quiet=False)
+    indict["rmsCMB"]["cMAC_sd"] = c1_err_MAC[1]
+    if not quiet:
+        print('CMB RMS, MAC   m=1/4 =0.25', indict["rmsCMB"]["cMAC"])
+
+    indict["rmsCMB"]["mIMAC"] = 0.40
+    indict["rmsCMB"]["cIMAC"] = np.mean(np.log10(indict["rmsCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsCMB"]["mIMAC"]*np.log10(indict["p"]))
+    c1_err_IMAC = prefacError(indict["p"], indict["rmsCMB"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["rmsCMB"]["cIMAC"],indict["rmsCMB"]["mIMAC"]], plot=False, quiet=False)
+    indict["rmsCMB"]["cIMAC_sd"] = c1_err_IMAC[1]
+    if not quiet:
+        print('CMB RMS, IMAC  m=2/5 =0.40', indict["rmsCMB"]["cIMAC"])
+
+    indict["rmsCMB"]["mIMACd"] = 0.20
+    indict["rmsCMB"]["cIMACd"] = np.mean(np.log10(indict["rmsCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsCMB"]["mIMACd"]*np.log10(indict["p"]))
+    c1_err_IMACd = prefacError(indict["p"], indict["rmsCMB"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["rmsCMB"]["cIMACd"],indict["rmsCMB"]["mIMACd"]], plot=False, quiet=False)
+    indict["rmsCMB"]["cIMACd_sd"] = c1_err_IMACd[1]
+    if not quiet:
+        print('CMB RMS, IMACd m=1/5 =0.20', indict["rmsCMB"]["cIMACd"])
+
+    indict["rmsCMB"]["mIMACi"] = 0.30
+    indict["rmsCMB"]["cIMACi"] = np.mean(np.log10(indict["rmsCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["rmsCMB"]["mIMACi"]*np.log10(indict["p"]))
+    c1_err_IMACi = prefacError(indict["p"], indict["rmsCMB"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["rmsCMB"]["cIMACi"],indict["rmsCMB"]["mIMACi"]], plot=False, quiet=False)
+    indict["rmsCMB"]["cIMACi_sd"] = c1_err_IMACi[1]
+    if not quiet:
+        print('CMB RMS, IMACi m=3/10=0.30', indict["rmsCMB"]["cIMACi"])
+
+    # - dipole CMB field
+    indict["dipCMB"]["mIMA"] = 1/3.
+    indict["dipCMB"]["cIMA"] = np.mean(np.log10(indict["dipCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["dipCMB"]["mIMA"]*np.log10(indict["p"]))
+
+    c1_err_IMA = prefacError(indict["p"], indict["dipCMB"]["Le"]/indict["fohm"]**0.5,
+                            model=[10**indict["dipCMB"]["cIMA"],indict["dipCMB"]["mIMA"]], plot=False, quiet=False)
+    indict["dipCMB"]["cIMA_sd"] = c1_err_IMA[1]
+    if not quiet:
+        print('CMB dip, IMA   m=1/3 =0.33', indict["dipCMB"]["cIMA"])
+
+    indict["dipCMB"]["mMAC"] = 0.25
+    indict["dipCMB"]["cMAC"] = np.mean(np.log10(indict["dipCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["dipCMB"]["mMAC"]*np.log10(indict["p"]))
+    c1_err_MAC = prefacError(indict["p"], indict["dipCMB"]["Le"]/indict["fohm"]**0.5,
+                            model=[10**indict["dipCMB"]["cMAC"],indict["dipCMB"]["mMAC"]], plot=False, quiet=False)
+    indict["dipCMB"]["cMAC_sd"] = c1_err_MAC[1]
+    if not quiet:
+        print('CMB dip, MAC   m=1/4 =0.25', indict["dipCMB"]["cMAC"])
+
+    indict["dipCMB"]["mIMAC"] = 0.40
+    indict["dipCMB"]["cIMAC"] = np.mean(np.log10(indict["dipCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["dipCMB"]["mIMAC"]*np.log10(indict["p"]))
+    c1_err_IMAC = prefacError(indict["p"], indict["dipCMB"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["dipCMB"]["cIMAC"],indict["dipCMB"]["mIMAC"]], plot=False, quiet=False)
+    indict["dipCMB"]["cIMAC_sd"] = c1_err_IMAC[1]
+    if not quiet:
+        print('CMB dip, IMAC  m=2/5 =0.40', indict["dipCMB"]["cIMAC"])
+
+    indict["dipCMB"]["mIMACd"] = 0.20
+    indict["dipCMB"]["cIMACd"] = np.mean(np.log10(indict["dipCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["dipCMB"]["mIMACd"]*np.log10(indict["p"]))
+    c1_err_IMACd = prefacError(indict["p"], indict["dipCMB"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["dipCMB"]["cIMACd"],indict["dipCMB"]["mIMACd"]], plot=False, quiet=False)
+    indict["dipCMB"]["cIMACd_sd"] = c1_err_IMACd[1]
+    if not quiet:
+        print('CMB dip, IMACd m=1/5 =0.20', indict["dipCMB"]["cIMACd"])
+
+    indict["dipCMB"]["mIMACi"] = 0.30
+    indict["dipCMB"]["cIMACi"] = np.mean(np.log10(indict["dipCMB"]["Le"]/indict["fohm"]**0.5) - \
+                                       indict["dipCMB"]["mIMACi"]*np.log10(indict["p"]))
+    c1_err_IMACi = prefacError(indict["p"], indict["dipCMB"]["Le"]/indict["fohm"]**0.5,
+                              model=[10**indict["dipCMB"]["cIMACi"],indict["dipCMB"]["mIMACi"]], plot=False, quiet=False)
+    indict["dipCMB"]["cIMACi_sd"] = c1_err_IMACi[1]
+    if not quiet:
+        print('CMB dip, IMACi m=3/10=0.30', indict["dipCMB"]["cIMACi"])
+
+    return indict
 
 def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, EkOPm_range=None, EMoEK_range=None, datadict=None):
     """
@@ -385,6 +611,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["L"]["plot"] = False
             print("\nNot plotting L dataset!\n")
         datadict["L"]["d"] = new_df.to_dict("list")
+        datadict["L"]["d"] = convertDictKeys(datadict["L"]["d"])
         
     # ---------------------------------
     # - Aubert et al (2009) simulations
@@ -416,7 +643,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["A"]["plot"] = False
             print("\nNot plotting A dataset!\n")
         datadict["A"]["d"] = new_df.to_dict("list")
-        print('Aubert p = ', datadict["A"]["d"]['p'])
+        datadict["A"]["d"] = convertDictKeys(datadict["A"]["d"])
     # -------------------
     # - Yadav simulations
     # -------------------
@@ -450,6 +677,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["Y"]["plot"] = False
             print("\nNot plotting Y dataset!\n")
         datadict["Y"]["d"] = new_df.to_dict("list")
+        datadict["Y"]["d"] = convertDictKeys(datadict["Y"]["d"])
     # -------------------------
     # - Christensen simulations
     # -------------------------
@@ -480,6 +708,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["UC"]["plot"] = False
             print("\nNot plotting UC dataset!\n")
         datadict["UC"]["d"] = new_df.to_dict("list")
+        datadict["UC"]["d"] = convertDictKeys(datadict["UC"]["d"])
     # -------------------------
     # - Christensen simulations
     # -------------------------
@@ -505,6 +734,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["UCt"]["plot"] = False
             print("\nNot plotting UCt dataset!\n")
         datadict["UCt"]["d"] = new_df.to_dict("list")
+        datadict["UCt"]["d"] = convertDictKeys(datadict["UCt"]["d"])
     # -------------------------
     # - Aubert 2017 and 2019 simulations
     # -------------------------        
