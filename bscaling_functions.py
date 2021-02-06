@@ -753,7 +753,23 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["APath"]["plot"] = False
             print("\nNot plotting UC dataset!\n")
         datadict["APath"]['nsims'] = nsims 
-        datadict["APath"]['d'] = df        
+        datadict["APath"]['d'] = df      
+        
+        datadict["APath"]['fohm'] = datadict["APath"]['d']['fohm']
+        datadict["APath"]['p']    = datadict["APath"]['d']['p']
+        datadict["APath"]['E']    = datadict["APath"]['d']['E']
+        datadict["APath"]['Rm']   = datadict["APath"]['d']['Rm']
+        datadict["APath"]['bdip'] = np.zeros(len(datadict["APath"]['fohm']))
+        datadict["APath"]['Pm']   = datadict["APath"]['d']['Pm']
+        
+        datadict["APath"]['rmsINT']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['d']['Pm'])   * datadict["APath"]['d']['Els'])
+        datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['d']['Pm']) ) * datadict["APath"]['d']['rmsCMBtotal']
+        datadict["APath"]['dipCMB']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['d']['Pm']) ) * datadict["APath"]['d']['RMSCMBl=1']
+
+        datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = fits(datadict["APath"]['p'], datadict["APath"]['rmsINT']['Le'], datadict["APath"]['fohm'])
+        datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = fits(datadict["APath"]['p'], datadict["APath"]['rmsCMB']['Le'], datadict["APath"]['fohm'])
+        datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = fits(datadict["APath"]['p'], datadict["APath"]['dipCMB']['Le'], datadict["APath"]['fohm'])
+
     # -------------------------
     # Schwaiger 2019
     # -------------------------        
@@ -773,6 +789,23 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             print("\nNot plotting UC dataset!\n")
         datadict["S"]['nsims'] = nsims 
         datadict["S"]['d'] = df        
+        
+        datadict["S"]['fohm'] = datadict["S"]['d']['fohm']
+        datadict["S"]['p']    = datadict["S"]['d']['p']
+        datadict["S"]['E']    = datadict["S"]['d']['E']
+        datadict["S"]['Rm']   = datadict["S"]['d']['Rm']
+        datadict["S"]['bdip'] = np.zeros(len(datadict["S"]['fohm']))
+        datadict["S"]['Pm']   = datadict["S"]['d']['Pm']
+        
+        datadict["S"]['rmsINT']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['d']['Pm'])   * datadict["S"]['d']['Els'])
+        datadict["S"]['rmsCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['d']['Pm']) ) * datadict["S"]['d']['rmsCMBtotal']
+        datadict["S"]['dipCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['d']['Pm']) ) * datadict["S"]['d']['RMSCMBl=1']
+
+        datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = fits(datadict["S"]['p'], datadict["S"]['rmsINT']['Le'], datadict["S"]['fohm'])
+        datadict["S"]['rmsCMB']['ssr'], datadict["S"]['rmsCMB']['m'], datadict["S"]['rmsCMB']['c'], datadict["S"]['rmsCMB']['res'] = fits(datadict["S"]['p'], datadict["S"]['rmsCMB']['Le'], datadict["S"]['fohm'])
+        datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = fits(datadict["S"]['p'], datadict["S"]['dipCMB']['Le'], datadict["S"]['fohm'])
+
+        
     else:
         raise ValueError("Not valid dataset")
 

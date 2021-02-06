@@ -51,8 +51,8 @@ datadict = {"L":{  "plot":True, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{},
             "Y":{  "plot":True, "dataset":"Y", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
             "UC":{ "plot":True, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
             "UCt":{"plot":True, "dataset":"UCt", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "APath":{"plot":False, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "S":{"plot":False, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
+            "APath":{"plot":True, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "S":{"plot":True, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
 
 earthdict   = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "p":{}}
 
@@ -313,45 +313,6 @@ if datadict["Y"]["plot"]:
         print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
         print('***************************\n')
 # ---
-if datadict['APath']["plot"]:
-    fohm_dum = datadict["APath"]['d']['fohm']
-    P_dum    = datadict["APath"]['d']['p']
-    E_dum    = datadict["APath"]['d']['E']
-    Pm_dum   = datadict["APath"]['d']['Pm']
-    Els_dum  = datadict["APath"]['d']['Els']
-    Els12_dum  = datadict["APath"]['d']['rmsCMBtotal']
-    Els1_dum   = datadict["APath"]['d']['RMSCMBl=1']
-    
-    datadict["APath"]['d']['bdip'] = 0.0
-
-    datadict["APath"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum)   * Els_dum)
-    datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els12_dum
-    datadict["APath"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
-
-    datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = b.fits(P_dum, datadict["APath"]['rmsINT']['Le'], fohm_dum)
-    datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = b.fits(P_dum, datadict["APath"]['rmsCMB']['Le'], fohm_dum)
-    datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = b.fits(P_dum, datadict["APath"]['dipCMB']['Le'], fohm_dum)
-
-# ---
-if datadict['S']["plot"]:
-    fohm_dum   = datadict["S"]['d']['fohm']
-    P_dum   = datadict["S"]['d']['p']
-    E_dum   = datadict["S"]['d']['E']
-    Pm_dum  = datadict["S"]['d']['Pm']
-    Els_dum = datadict["S"]['d']['Els']
-    Els_cmb = datadict["S"]['d']['rmsCMBtotal']
-    Els1_dum  = datadict["S"]['d']['RMSCMBl=1']
-
-    datadict["S"]['d']['bdip'] = 0.0
-
-    datadict["S"]['rmsINT']['Le'] = np.sqrt( (E_dum/Pm_dum) * Els_dum)
-    datadict["S"]['rmsCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els_cmb
-    datadict["S"]['dipCMB']['Le'] = np.sqrt( (E_dum/Pm_dum) ) * Els1_dum
-
-
-    datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = b.fits(P_dum, datadict["S"]['rmsINT']['Le'], fohm_dum)
-    datadict["S"]['rmsCMB']['ssr'], datadict["S"]['rmsCMB']['m'], datadict["S"]['rmsCMB']['c'], datadict["S"]['rmsCMB']['res'] = b.fits(P_dum, datadict["S"]['rmsCMB']['Le'], fohm_dum)
-    datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = b.fits(P_dum, datadict["S"]['dipCMB']['Le'], fohm_dum)
 
 # Construct datasets of all simulations
 alldatadict = b.combineDataDict(datadict, quiet=False)
