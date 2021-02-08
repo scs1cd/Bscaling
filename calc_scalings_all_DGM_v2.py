@@ -12,7 +12,7 @@ rc('text', usetex=False)
 # ---------------------------------------------------------------------------------------
 
 calc_prefac_err = True # Calculate and plot prefactor error?
-myfdip  = 1 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
+myfdip  = 2 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
 myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
@@ -102,26 +102,32 @@ SOutName       = APathname+filetag
 # read and filter datasets
 if datadict["L"]["plot"]:
     df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsOutName, dataset="Leeds", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if datadict["Y"]["plot"]:
     df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavOutName, dataset="Yadav", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if datadict["A"]["plot"]:
     df, datadict = b.filter_table(infname=aubertname ,outfname=aubertOutName, dataset="Aubert", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if datadict["UC"]["plot"]:
     df, datadict = b.filter_table(infname=christname ,outfname=christOutName, dataset="Christensen", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if datadict["UCt"]["plot"]:
     df, datadict = b.filter_table(infname=christnamet,outfname=christOutNameT, dataset="ChristensenT", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if datadict["APath"]["plot"]:
     df, datadict = b.filter_table(infname=APathname,  outfname=APathOutName, dataset="APath",fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if datadict["S"]["plot"]:
     df, datadict = b.filter_table(infname=Sname    ,  outfname=SOutName    , dataset="S"    ,fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict)
-
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 if myfohm == 1:
     fohmn = "1"
 else: 
@@ -146,172 +152,6 @@ if (myEr == 1):
     outfnamepf += "_"+EMoEK_tag
 outfname += ".txt"
 outfnamepf += ".txt"
-
-# Leeds dataset
-if datadict["L"]["plot"]:
-    datadict["L"]["E"]  = datadict["L"]["d"]["Ek"]
-    datadict["L"]["Pm"] = datadict["L"]["d"]["Pm"]
-    datadict["L"]["Rm"] = datadict["L"]["d"]["RmAve"]
-    
-    # Calculate shell volume
-    ar = datadict["L"]["d"]["ar"] # aspect ratio
-    volS = np.asarray([b.shellVolume(ar[i]) for i in range(len(ar))])
-
-    if myfohm == 1:
-        datadict["L"]["fohm"] = np.ones(len(datadict["L"]["d"]["EkinDisAve"]))
-    else:
-        datadict["L"]["fohm"] = datadict["L"]["d"]["EmagDisAve"] / \
-                                (datadict["L"]["d"]["EkinDisAve"]+datadict["L"]["d"]["EmagDisAve"])
-    # get field strengths and power
-    datadict["L"]["rmsINT"]["Le"] = np.sqrt(8.0) * (datadict["L"]["E"]/datadict["L"]["Pm"]) * \
-                                    np.sqrt(datadict["L"]["d"]["EmagAve"]/volS)       # Manual eq. (3.38)
-    datadict["L"]["rmsCMB"]["Le"] = 2. * np.sqrt(datadict["L"]["E"]/datadict["L"]["Pm"] * datadict["L"]["d"]["ElsCMBAve"])
-    datadict["L"]["dipCMB"]["Le"] = 2. * np.sqrt(datadict["L"]["E"]/datadict["L"]["Pm"] * datadict["L"]["d"]["ElsDipCMBAve"])
-    datadict["L"]["p"] = 8.0 * (datadict["L"]["E"]/datadict["L"]["Pm"])**3 * \
-                         (datadict["L"]["d"]["EkinDisAve"]+datadict["L"]["d"]["EmagDisAve"]) / volS
-    # get fdip and bdip
-    datadict["L"]["bdip"] = datadict["L"]["rmsINT"]["Le"]/datadict["L"]["dipCMB"]["Le"]
-    datadict["L"]["fdip"] = datadict["L"]["d"]["cmb_diptyAve"]
-    # make fit
-    datadict["L"]["rmsINT"]["ssr"], datadict["L"]["rmsINT"]["m"], datadict["L"]["rmsINT"]["c"], datadict["L"]["rmsINT"]["res"] = \
-        b.fits(datadict["L"]["p"], datadict["L"]["rmsINT"]["Le"], datadict["L"]["fohm"])
-    datadict["L"]["rmsCMB"]["ssr"], datadict["L"]["rmsCMB"]["m"], datadict["L"]["rmsCMB"]["c"], datadict["L"]["rmsCMB"]["res"] = \
-        b.fits(datadict["L"]["p"], datadict["L"]["rmsCMB"]["Le"], datadict["L"]["fohm"])
-    datadict["L"]["dipCMB"]["ssr"], datadict["L"]["dipCMB"]["m"], datadict["L"]["dipCMB"]["c"], datadict["L"]["dipCMB"]["res"] = \
-        b.fits(datadict["L"]["p"], datadict["L"]["dipCMB"]["Le"], datadict["L"]["fohm"])
-
-# Get Aubert data
-# NB - Aubert uses different radii! chi dependence of parameters?
-if datadict["A"]:
-    datadict["A"]["E"]    = datadict["A"]["d"]["E"]
-    datadict["A"]["Pm"]   = datadict["A"]["d"]["Pm"]
-    datadict["A"]["Rm"]   = datadict["A"]["d"]["Ro"] / datadict["A"]["E"] * datadict["A"]["Pm"]
-    datadict["A"]["fohm"] = datadict["A"]["d"]["fohm"]
-    EA   , LeA   ,bdipA,fdipA,PA   ,fohmA, dAall,RoA,PmA   = np.loadtxt(aubertname, usecols=(0,7,8,9,12,13,10,6,3), skiprows=1, unpack='true')
-    if myfohm == 1:
-        fohmA = np.ones(len(datadict["A"]["d"]["fohm"]))
-    else:
-        datadict["A"]["fohm"] = datadict["A"]["d"]["fohm"]
-    
-    datadict["A"]["p"]            = datadict["A"]["d"]["p"]  
-    datadict["A"]["bdip"]         = datadict["A"]["d"]["bdip"]
-    datadict["A"]["fdip"]         = datadict["A"]["d"]["fdip"]
-    datadict["A"]["rmsINT"]["Le"] = datadict["A"]["d"]["Lo"]  
-    datadict["A"]["rmsCMB"]["Le"] = datadict["A"]["d"]["Lo"] / (datadict["A"]["d"]["bdip"] * datadict["A"]["d"]["fdip"])
-    datadict["A"]["dipCMB"]["Le"] = datadict["A"]["d"]["Lo"] / datadict["A"]["d"]["bdip"]
-    # fits
-    datadict["A"]["rmsINT"]["ssr"], datadict["A"]["rmsINT"]["m"], datadict["A"]["rmsINT"]["c"], datadict["A"]["rmsINT"]["res"] = \
-        b.fits(datadict["A"]["p"], datadict["A"]["rmsINT"]["Le"], datadict["A"]["fohm"])
-    datadict["A"]["rmsCMB"]["ssr"], datadict["A"]["rmsCMB"]["m"], datadict["A"]["rmsCMB"]["c"], datadict["A"]["rmsCMB"]["res"] = \
-        b.fits(datadict["A"]["p"], datadict["A"]["rmsCMB"]["Le"], datadict["A"]["fohm"])
-    datadict["A"]["dipCMB"]["ssr"], datadict["A"]["dipCMB"]["m"], datadict["A"]["dipCMB"]["c"], datadict["A"]["dipCMB"]["res"] = \
-        b.fits(datadict["A"]["p"], datadict["A"]["dipCMB"]["Le"], datadict["A"]["fohm"])
-
-# Christensen dataset
-# Ek has no factor 2
-# Fundamental length scale is shell thickness, time scale is viscous diffusion time, magnetic field scale is "Elsasser scale".
-# NOTE that variables names "Els" are actually RMS field strengths!!
-if datadict["UC"]["plot"]:
-    datadict["UC"]["E"]  = datadict["UC"]["d"]["E"]
-    datadict["UC"]["Pm"] = datadict["UC"]["d"]["Pm"]  
-    datadict["UC"]["Rm"] = datadict["UC"]["d"]["Rm"]  
-    datadict["UC"]["p"]  = 1e7 * datadict["UC"]["d"]["pow"] * datadict["UC"]["E"]**3
-    if myfohm == 1:
-        datadict["UC"]["fohm"] = np.ones(len(datadict["UC"]["d"]["jou"]))
-    else:
-        datadict["UC"]["fohm"] = datadict["UC"]["d"]["jou"] / 100
-
-    datadict["UC"]["rmsINT"]["Le"] = np.sqrt(datadict["UC"]["E"]/datadict["UC"]["Pm"]) * datadict["UC"]["d"]["B"]        # Eqn 14 of CA06
-    datadict["UC"]["rmsCMB"]["Le"] = np.sqrt(datadict["UC"]["E"]/datadict["UC"]["Pm"]) * datadict["UC"]["d"]["Bsur"]
-    datadict["UC"]["dipCMB"]["Le"] = np.sqrt(datadict["UC"]["E"]/datadict["UC"]["Pm"]) * datadict["UC"]["d"]["Bdip"]
-    datadict["UC"]["bdip"]         = datadict["UC"]["rmsINT"]["Le"]/datadict["UC"]["dipCMB"]["Le"]
-    datadict["UC"]["fdip"]         = datadict["UC"]["d"]["Bdip"]/datadict["UC"]["d"]["B12"]
-    # fits
-    datadict["UC"]["rmsINT"]["ssr"], datadict["UC"]["rmsINT"]["m"], datadict["UC"]["rmsINT"]["c"], datadict["UC"]["rmsINT"]["res"] = \
-        b.fits(datadict["UC"]["p"], datadict["UC"]["rmsINT"]["Le"], datadict["UC"]["fohm"])
-    datadict["UC"]["rmsCMB"]["ssr"], datadict["UC"]["rmsCMB"]["m"], datadict["UC"]["rmsCMB"]["c"], datadict["UC"]["rmsCMB"]["res"] = \
-        b.fits(datadict["UC"]["p"], datadict["UC"]["rmsCMB"]["Le"], datadict["UC"]["fohm"])
-    datadict["UC"]["dipCMB"]["ssr"], datadict["UC"]["dipCMB"]["m"], datadict["UC"]["dipCMB"]["c"], datadict["UC"]["dipCMB"]["res"] = \
-        b.fits(datadict["UC"]["p"], datadict["UC"]["dipCMB"]["Le"], datadict["UC"]["fohm"])
-
-    if chk == 1:
-        # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
-        # Em = Els / (2*Pm*E) = Le**2 / (2 E**2) 
-        # P is printed to chk against Christensen 10 Fig 2. Note he uses Rc instead of D for 
-        #   length and there is a factor 1/4pi in the Ra_Q definition. 
-        #   NOTE - I still do not understand how to calculate his F. 
-        print('\n*******Christensen FF******')
-        EfromLe  = datadict["UC"]["rmsINT"]["Le"]**2 * datadict["UC"]["Pm"] / 2.0 / datadict["UC"]["E"]**2 / datadict["UC"]["Pm"]
-        Efromfile = datadict["UC"]["d"]["Emag"]
-        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
-        print('Power at E=3e-5       = ', datadict["UC"]["p"][26:35] / (1-0.35)**2 *4.0*np.pi)
-        print('***************************\n')
-
-if datadict["UCt"]["plot"]:
-    datadict["UCt"]["E"] = datadict["UCt"]["d"]["E"]
-    datadict["UCt"]["Pm"] = datadict["UCt"]["d"]["Pm"]
-    datadict["UCt"]["Rm"] = datadict["UCt"]["d"]["Rm"]
-    if myfohm == 1:
-        datadict["UCt"]["fohm"] = np.ones(len(datadict["UCt"]["d"]["jou"]))
-    else:
-        datadict["UCt"]["fohm"] = datadict["UCt"]["d"]["jou"] / 100
-
-    datadict["UCt"]["rmsINT"]["Le"] = np.sqrt(datadict["UCt"]["E"]/datadict["UCt"]["Pm"]) * datadict["UCt"]["d"]["B"]
-    datadict["UCt"]["rmsCMB"]["Le"] = np.sqrt(datadict["UCt"]["E"]/datadict["UCt"]["Pm"]) * datadict["UCt"]["d"]["Bsur"]
-    datadict["UCt"]["dipCMB"]["Le"] = np.sqrt(datadict["UCt"]["E"]/datadict["UCt"]["Pm"]) * datadict["UCt"]["d"]["Bdip"]
-    datadict["UCt"]["p"]            = 1e7 * datadict["UCt"]["d"]["pow"] * datadict["UCt"]["E"]**3
-    datadict["UCt"]["bdip"]         = datadict["UCt"]["rmsINT"]["Le"]/datadict["UCt"]["dipCMB"]["Le"]
-    datadict["UCt"]["fdip"]         = datadict["UCt"]["d"]["Bdip"]/datadict["UCt"]["d"]["B12"]
-    # fits
-    datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = \
-        b.fits(datadict["UCt"]["p"], datadict["UCt"]["rmsINT"]["Le"], datadict["UCt"]["fohm"])
-    datadict["UCt"]["rmsCMB"]["ssr"], datadict["UCt"]["rmsCMB"]["m"], datadict["UCt"]["rmsCMB"]["c"], datadict["UCt"]["rmsCMB"]["res"] = \
-        b.fits(datadict["UCt"]["p"], datadict["UCt"]["rmsCMB"]["Le"], datadict["UCt"]["fohm"])
-    datadict["UCt"]["dipCMB"]["ssr"], datadict["UCt"]["dipCMB"]["m"], datadict["UCt"]["dipCMB"]["c"], datadict["UCt"]["dipCMB"]["res"] = \
-        b.fits(datadict["UCt"]["p"], datadict["UCt"]["dipCMB"]["Le"], datadict["UCt"]["fohm"])
-
-    if chk == 1:
-        # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
-        # Em = Els / (2*Pm*E) = Le**2 / (2 E**2) 
-        print('*******Christensen qT******')
-        EfromLe  = datadict["UCt"]["rmsINT"]["Le"]**2 * datadict["UCt"]["Pm"] / 2.0 / datadict["UCt"]["E"]**2 / datadict["UCt"]["Pm"]
-        Efromfile = datadict["UCt"]["Emag"]
-        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
-        print('***************************\n')
-
-# ---
-# Yadav - NOTE - he uses fixed T. Extracts E, Pm, Elasser, Elsasser_CMB, Dip_CMB, Buo_pow, Ohm_diss
-if datadict["Y"]["plot"]:
-    datadict["Y"]["E"]  = datadict["Y"]["d"]["E"]
-    datadict["Y"]["Pm"] = datadict["Y"]["d"]["Pm"]
-    datadict["Y"]["Rm"] = datadict["Y"]["d"]["Re"]*datadict["Y"]["d"]["Pm"]
-    if myfohm == 1:
-        datadict["Y"]["fohm"] = np.ones(len(datadict["Y"]["d"]["Ohm_diss"]))
-    else:
-        datadict["Y"]["fohm"] = datadict["Y"]["d"]["Ohm_diss"]/datadict["Y"]["d"]["Buo_pow"]
-
-    datadict["Y"]["rmsINT"]["Le"] = np.sqrt(datadict["Y"]["d"]["Elsasser"]*datadict["Y"]["E"]/datadict["Y"]["Pm"])
-    datadict["Y"]["rmsCMB"]["Le"] = np.sqrt(datadict["Y"]["d"]["Elsasser_CMB"]*datadict["Y"]["E"]/datadict["Y"]["Pm"])
-    datadict["Y"]["dipCMB"]["Le"] = np.sqrt(datadict["Y"]["d"]["Elsasser_CMB"]*datadict["Y"]["d"]["Dip_CMB"]*datadict["Y"]["E"]/datadict["Y"]["Pm"])
-    datadict["Y"]["p"]            = datadict["Y"]["E"]**3 * datadict["Y"]["d"]["Buo_pow"]/b.shellVolume(0.35)
-    datadict["Y"]["bdip"]         = datadict["Y"]["rmsINT"]["Le"]/datadict["Y"]["dipCMB"]["Le"] 
-    datadict["Y"]["fdip"]         = datadict["Y"]["d"]["Dip_CMB_l11"]
-
-    datadict["Y"]["rmsINT"]["ssr"], datadict["Y"]["rmsINT"]["m"], datadict["Y"]["rmsINT"]["c"], datadict["Y"]["rmsINT"]["res"] = \
-        b.fits(datadict["Y"]["p"], datadict["Y"]["rmsINT"]["Le"], datadict["Y"]["fohm"])
-    datadict["Y"]["rmsCMB"]["ssr"], datadict["Y"]["rmsCMB"]["m"], datadict["Y"]["rmsCMB"]["c"], datadict["Y"]["rmsCMB"]["res"] = \
-        b.fits(datadict["Y"]["p"], datadict["Y"]["rmsCMB"]["Le"], datadict["Y"]["fohm"])
-    datadict["Y"]["dipCMB"]["ssr"], datadict["Y"]["dipCMB"]["m"], datadict["Y"]["dipCMB"]["c"], datadict["Y"]["dipCMB"]["res"] = \
-        b.fits(datadict["Y"]["p"], datadict["Y"]["dipCMB"]["Le"], datadict["Y"]["fohm"])
-
-    if chk == 1:
-        # CHECK: Relate Elsasser to EM, total magnetic energy 
-        # Em = Els*Els / (2*Pm*E)
-        print('*******Yadav***************')
-        EfromLe  = datadict["Y"]["rmsINT"]["Le"]**2 * 14.59 / 2.0 / datadict["Y"]["E"]**2
-        Efromfile = datadict["Y"]["d"]["ME_pol"]+datadict["Y"]["d"]["ME_tor"]
-        print('Energy difference (%) = ', np.abs( (EfromLe-Efromfile) / Efromfile)*100.0)
-        print('***************************\n')
 # ---
 
 # Construct datasets of all simulations
@@ -364,7 +204,6 @@ alldatadict = b.fitForceScalings(alldatadict, quiet=False)
 
 # --- save out prefactor file
 b.savePrefacValues(filename=outfpath+outfnamepf, indict=alldatadict, l_prefac_err=calc_prefac_err)
-
 
 ##########################################################
 # Extrapolated figures
@@ -621,9 +460,9 @@ if myfdip == 0:
 elif myfdip == 1:
     plt.title("Field strength ($Le$) vs Buoyant Power ($P$) for $f_{dip}>0.5$")
 elif myfdip == 2:
-    plt.title("Field strength ($Le$) vs Buoyant Power ($P$) for $%.2f<f_{dip}<%.2f$" %(fdip_min,fdip_max))
+    plt.title("Field strength ($Le$) vs Buoyant Power ($P$) for $%.2f<f_{dip}<%.2f$" %(fdip_range[0],fdip_range[1]))
 elif myfdip == 3:
-    plt.title("Field strength ($Le$) vs Buoyant Power ($P$) for $%.2f<f_{dip}<%.2f$" %(fdip_min,fdip_max))
+    plt.title("Field strength ($Le$) vs Buoyant Power ($P$) for $%.2f<f_{dip}<%.2f$" %(fdip_range[0],fdip_range[1]))
 plt.legend(bbox_to_anchor=(0.73, 0.05), loc=3, borderaxespad=0)
 #file2="./fig/Lefohm_PA_Brmsallzoom_fdip=" + fdipn + "_fohm=" + fohmn + ".pdf"
 #plt.savefig(file2, format='pdf',bbox_inches="tight")
@@ -707,10 +546,10 @@ for key in datadict:
                  ", SSR="+str(np.round(datadict[key]["dipCMB"]["ssr"],2)),
                  transform=ax.transAxes, color=datadict[key]["plotp"]["edgecolor"])
         iplt += 1
-plt.text(0.05, 0.61, "$m$ = "+str(np.round(alldatadict["dipCMB"]["m"],2))+\
+plt.text(legend_xpos, legend_ypos-iplt*legend_dy, "$m$ = "+str(np.round(alldatadict["dipCMB"]["m"],2))+\
                               "$\pm$"+str(np.round(alldatadict["dipCMB"]["res"],2))+\
                               ", SSR="+str(np.round(alldatadict["dipCMB"]["ssr"],2)), transform=ax.transAxes, color='black')
-plt.text(0.05, 0.56, "$\sigma$ = "+str(np.round(alldatadict["dipCMB"]["c_sd"],4)), transform=ax.transAxes, color='black')
+plt.text(legend_xpos, legend_ypos-(iplt+1)*legend_dy,"$\sigma$ = "+str(np.round(alldatadict["dipCMB"]["c_sd"],4)), transform=ax.transAxes, color='black')
 plt.xlabel('$P_A$')
 if myfohm == 0: 
     plt.ylabel('$Le_{cmb}^{l=1}/f_{ohm}^{1/2}$')
