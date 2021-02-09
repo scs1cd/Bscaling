@@ -22,7 +22,7 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2e-15,1.e+19]
+    EMoEK_range = [2e0,1.e+19]
 else:
     EMoEK_range = None
     
@@ -46,12 +46,12 @@ plt_bdip = False
 # ---------------------------------------------------------------------------------------
 
 # Create dictionaries of datasets
-datadict = {"L":{  "plot":True, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "A":{  "plot":True, "dataset":"A", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "Y":{  "plot":True, "dataset":"Y", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "UC":{ "plot":True, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "UCt":{"plot":True, "dataset":"UCt", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
-            "APath":{"plot":True, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+datadict = {"L":{  "plot":False, "dataset":"L", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "A":{  "plot":False, "dataset":"A", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "Y":{  "plot":False, "dataset":"Y", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "UC":{ "plot":False, "dataset":"UC", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "UCt":{"plot":False, "dataset":"UCt", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
+            "APath":{"plot":False, "dataset":"APath", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
             "S":{"plot":True, "dataset":"S", "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}}
 
 earthdict   = {"plot":True, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "p":{}}
@@ -91,43 +91,6 @@ if (myEkOPm == 1 or myEr == 1):
     elif (myEkOPm == 1 and myEr == 1):
         filetag += "_EkOPm_EMoEK"
 
-leedsOutName   = leedsname+filetag
-yadavOutName   = yadavname+filetag
-aubertOutName  = aubertname+filetag
-christOutName  = christname+filetag
-christOutNameT = christnamet+filetag
-APathOutName   = APathname+filetag
-SOutName       = APathname+filetag
-
-# read and filter datasets
-if datadict["L"]["plot"]:
-    df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsOutName, dataset="Leeds", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
-if datadict["Y"]["plot"]:
-    df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavOutName, dataset="Yadav", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
-if datadict["A"]["plot"]:
-    df, datadict = b.filter_table(infname=aubertname ,outfname=aubertOutName, dataset="Aubert", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
-if datadict["UC"]["plot"]:
-    df, datadict = b.filter_table(infname=christname ,outfname=christOutName, dataset="Christensen", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
-if datadict["UCt"]["plot"]:
-    df, datadict = b.filter_table(infname=christnamet,outfname=christOutNameT, dataset="ChristensenT", fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
-if datadict["APath"]["plot"]:
-    df, datadict = b.filter_table(infname=APathname,  outfname=APathOutName, dataset="APath",fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
-if datadict["S"]["plot"]:
-    df, datadict = b.filter_table(infname=Sname    ,  outfname=SOutName    , dataset="S"    ,fdip_range=fdip_range, 
-                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
-                                  chk=chk, myfohm=myfohm)
 if myfohm == 1:
     fohmn = "1"
 else: 
@@ -139,6 +102,36 @@ if (myEkOPm == 1):
 if (myEr == 1):
     EMoEK_min = EMoEK_range[0]; EMoEK_max = EMoEK_range[1]
     EMoEK_tag = "EMoEK="+format(EMoEK_min,'.1e')+"_"+format(EMoEK_max,'.1e')
+
+# read and filter datasets
+if datadict["L"]["plot"]:
+    df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsname+filetag, dataset="Leeds", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
+if datadict["Y"]["plot"]:
+    df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavname+filetag, dataset="Yadav", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
+if datadict["A"]["plot"]:
+    df, datadict = b.filter_table(infname=aubertname ,outfname=aubertname+filetag, dataset="Aubert", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
+if datadict["UC"]["plot"]:
+    df, datadict = b.filter_table(infname=christname ,outfname=christname+filetag, dataset="Christensen", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
+if datadict["UCt"]["plot"]:
+    df, datadict = b.filter_table(infname=christnamet,outfname= christnamet+filetag, dataset="ChristensenT", fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
+if datadict["APath"]["plot"]:
+    df, datadict = b.filter_table(infname=APathname,  outfname=APathname+filetag, dataset="APath",fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
+if datadict["S"]["plot"]:
+    df, datadict = b.filter_table(infname=Sname    ,  outfname=Sname+filetag    , dataset="S"    ,fdip_range=fdip_range, 
+                                  EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
+                                  chk=chk, myfohm=myfohm)
 
 # Output file of fitted slopes and pre-factors
 outfpath = "./"
@@ -172,6 +165,8 @@ Pfit = np.linspace(xmin, xmax, 10)
 fitall    = 10**alldatadict["rmsINT"]["c"] * Pfit**alldatadict["rmsINT"]["m"] 
 fitrmscmb = 10**alldatadict["rmsCMB"]["c"] * Pfit**alldatadict["rmsCMB"]["m"]
 fitdipcmb = 10**alldatadict["dipCMB"]["c"] * Pfit**alldatadict["dipCMB"]["m"]
+
+# CD - REMOVE PRINTS?
 print('All     (slope, 10^c, std dev c, SSR) =', alldatadict["rmsINT"]["m"], 10**alldatadict["rmsINT"]["c"], \
     alldatadict["rmsINT"]["res"], alldatadict["rmsINT"]["ssr"])
 print('RMS CMB (slope, 10^c, std dev c, SSR) =', alldatadict["rmsCMB"]["m"], 10**alldatadict["rmsCMB"]["c"], \
@@ -205,22 +200,18 @@ alldatadict = b.fitForceScalings(alldatadict, quiet=False)
 # --- save out prefactor file
 b.savePrefacValues(filename=outfpath+outfnamepf, indict=alldatadict, l_prefac_err=calc_prefac_err)
 
-##########################################################
-# Extrapolated figures
-##########################################################
-
 earthdict["dipCMB"]["min"], earthdict["dipCMB"]["max"], earthdict["rmsINT"]["min"], earthdict["rmsINT"]["max"],\
     earthdict["rmsCMB"]["min"], earthdict["rmsCMB"]["max"], earthdict["p"]["min"], earthdict["p"]["max"] = b.getEarthEstimates(quiet=False)
 
 ##########################
-# Brms plots
+# Brms INTERNAL FIELD
 ##########################
 
-fitEn    = 10**alldatadict["rmsINT"]["cIMA"] * Pfit**alldatadict["rmsINT"]["mIMA"]
-fitmac   = 10**alldatadict["rmsINT"]["cMAC"] * Pfit**alldatadict["rmsINT"]["mMAC"]
-fitimac  = 10**alldatadict["rmsINT"]["cIMAC"] * Pfit**alldatadict["rmsINT"]["mIMAC"]
+fitEn    = 10**alldatadict["rmsINT"]["cIMA"]   * Pfit**alldatadict["rmsINT"]["mIMA"]
+fitmac   = 10**alldatadict["rmsINT"]["cMAC"]   * Pfit**alldatadict["rmsINT"]["mMAC"]
+fitimac  = 10**alldatadict["rmsINT"]["cIMAC"]  * Pfit**alldatadict["rmsINT"]["mIMAC"]
 fitimacd = 10**alldatadict["rmsINT"]["cIMACd"] * Pfit**alldatadict["rmsINT"]["mIMACd"]
-fitimaci = 10**alldatadict["rmsINT"]["cIMACi"]* Pfit**alldatadict["rmsINT"]["mIMACi"]
+fitimaci = 10**alldatadict["rmsINT"]["cIMACi"] * Pfit**alldatadict["rmsINT"]["mIMACi"]
 
 # fit scaling bounds
 if calc_prefac_err:
@@ -232,7 +223,6 @@ if calc_prefac_err:
 idxIMA = b.idxStr(plt_extrap_scalings, "IMA")[0]
 idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
 
-
 # Plot simulations
 ax, legend_xpos, legend_ypos = b.plotSimulations(datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsINT",
                                                  cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[3e-5,0.2])
@@ -241,9 +231,9 @@ plt.loglog(Pfit ,fitall, color="black")
 if "IMAC" in plt_extrap_scalings:
     plt.loglog(Pfit, fitimac, color="dimgrey"  ,linestyle="--", lw=lw_fit, label="$m=2/5$ (IMAC)")
 if "IMACd" in plt_extrap_scalings:
-    plt.loglog(Pfit, fitimacd, color="dimgrey"  ,linestyle="-.", lw=lw_fit, label="$m=1/5$ (IMACd)")
+    plt.loglog(Pfit, fitimacd, color="dimgrey" ,linestyle="-.", lw=lw_fit, label="$m=1/5$ (IMACd)")
 if "IMACi" in plt_extrap_scalings:
-    plt.loglog(Pfit, fitimaci, color="dimgrey"  ,linestyle=":", lw=lw_fit, label="$m=3/10$ (IMACi)")
+    plt.loglog(Pfit, fitimaci, color="dimgrey" ,linestyle=":", lw=lw_fit, label="$m=3/10$ (IMACi)")
 if "IMA" in plt_extrap_scalings:
     if (calc_prefac_err):
         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit,
@@ -285,7 +275,7 @@ plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
 
 ##########################
-# Brms cmb plots
+# Brms CMB FIELD
 ##########################
 
 # Calculate prefactors of Brms cmb
