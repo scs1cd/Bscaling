@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import bscaling_functions as b
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -22,13 +21,13 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2e0,1.e+19]
+    EMoEK_range = [4e0,1.e+19]
 else:
     EMoEK_range = None
     
 # List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
 # IMA (or Energy below) corresponds to QG-MAC in the new notation.
-plt_extrap_scalings = ["IMA","MAC"]
+plt_extrap_scalings = ["IMA", "MAC"]
 lc_fit              = ["g",  "darkgrey"] # Line colour of fits
 sc_fit              = ["lightgreen", "lightgrey"] # Shading colour for \sigma intervals
 sc_alpha            = 0.7
@@ -166,14 +165,6 @@ fitall    = 10**alldatadict["rmsINT"]["c"] * Pfit**alldatadict["rmsINT"]["m"]
 fitrmscmb = 10**alldatadict["rmsCMB"]["c"] * Pfit**alldatadict["rmsCMB"]["m"]
 fitdipcmb = 10**alldatadict["dipCMB"]["c"] * Pfit**alldatadict["dipCMB"]["m"]
 
-# CD - REMOVE PRINTS?
-print('All     (slope, 10^c, std dev c, SSR) =', alldatadict["rmsINT"]["m"], 10**alldatadict["rmsINT"]["c"], \
-    alldatadict["rmsINT"]["res"], alldatadict["rmsINT"]["ssr"])
-print('RMS CMB (slope, 10^c, std dev c, SSR) =', alldatadict["rmsCMB"]["m"], 10**alldatadict["rmsCMB"]["c"], \
-    alldatadict["rmsCMB"]["res"], alldatadict["rmsCMB"]["ssr"])
-print('DIP CMB (slope, 10^c, std dev c, SSR) =', alldatadict["dipCMB"]["m"], 10**alldatadict["dipCMB"]["c"], \
-    alldatadict["dipCMB"]["res"], alldatadict["dipCMB"]["ssr"])
-
 if calc_prefac_err:
     # - Error estimate on the prefactor for CMB dip field strength
     c_err_dipcmb = b.prefacError(alldatadict["p"], alldatadict["dipCMB"]["Le"]/alldatadict["fohm"]**0.5,
@@ -203,9 +194,9 @@ b.savePrefacValues(filename=outfpath+outfnamepf, indict=alldatadict, l_prefac_er
 earthdict["dipCMB"]["min"], earthdict["dipCMB"]["max"], earthdict["rmsINT"]["min"], earthdict["rmsINT"]["max"],\
     earthdict["rmsCMB"]["min"], earthdict["rmsCMB"]["max"], earthdict["p"]["min"], earthdict["p"]["max"] = b.getEarthEstimates(quiet=False)
 
-##########################
+#########################################################################################################################################################
 # Brms INTERNAL FIELD
-##########################
+###############################################################################################################################
 
 fitEn    = 10**alldatadict["rmsINT"]["cIMA"]   * Pfit**alldatadict["rmsINT"]["mIMA"]
 fitmac   = 10**alldatadict["rmsINT"]["cMAC"]   * Pfit**alldatadict["rmsINT"]["mMAC"]
@@ -219,9 +210,6 @@ if calc_prefac_err:
                                                                     alldatadict["rmsINT"]["cIMA_sd"], alldatadict["rmsINT"]["mIMA"])
     fitmac_1sdp, fitmac_1sdm, fitmac_3sdp, fitmac_3sdm = b.getFitBounds(Pfit, alldatadict["rmsINT"]["cMAC"],\
                                                                          alldatadict["rmsINT"]["cMAC_sd"], alldatadict["rmsINT"]["mMAC"])
-# Get plot properties
-idxIMA = b.idxStr(plt_extrap_scalings, "IMA")[0]
-idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
 
 # Plot simulations
 ax, legend_xpos, legend_ypos = b.plotSimulations(datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsINT",
@@ -235,6 +223,7 @@ if "IMACd" in plt_extrap_scalings:
 if "IMACi" in plt_extrap_scalings:
     plt.loglog(Pfit, fitimaci, color="dimgrey" ,linestyle=":", lw=lw_fit, label="$m=3/10$ (IMACi)")
 if "IMA" in plt_extrap_scalings:
+    idxIMA = b.idxStr(plt_extrap_scalings, "IMA")[0]
     if (calc_prefac_err):
         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit,
                    label="$m=1/3$ (QG-MAC), $\sigma=$"+str(np.round(alldatadict["rmsINT"]["cIMA_sd"],3)))
@@ -242,12 +231,13 @@ if "IMA" in plt_extrap_scalings:
     else:
         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit, label="$m=1/3$ (QG-MAC)")
 if "MAC" in plt_extrap_scalings:
+    idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
     if (calc_prefac_err):
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit,
                    label="$m=1/4$ (MAC), $\sigma=$"+str(np.round(alldatadict["rmsINT"]["cMAC_sd"],3)))
-        plt.fill_between(Pfit, fitmac_1sdm, fitmac_1sdp, color=sc_fit[idxMAC], alpha=sc_alpha, zorder=-1)
-        plt.loglog(Pfit, fitmac_3sdm, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
-        plt.loglog(Pfit, fitmac_3sdp, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
+        #plt.fill_between(Pfit, fitmac_1sdm, fitmac_1sdp, color=sc_fit[idxMAC], alpha=sc_alpha, zorder=-1)
+        #plt.loglog(Pfit, fitmac_3sdm, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)  #3sigma bounds on MAC
+        #plt.loglog(Pfit, fitmac_3sdp, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
     else:
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit, label="$m=1/4$ (MAC)")
 # Plot title and axes labels
@@ -259,6 +249,7 @@ elif myfohm == 1:
 
 title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
 plt.title(title_str)
+plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
 
 # save figure
 file2 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
@@ -274,9 +265,9 @@ file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
 
-##########################
+###############################################################################################################################
 # Brms CMB FIELD
-##########################
+###############################################################################################################################
 
 # Calculate prefactors of Brms cmb
 fitEn    = 10**alldatadict["rmsCMB"]["cIMA"]   * Pfit**alldatadict["rmsCMB"]["mIMA"]
@@ -322,9 +313,9 @@ file3 += ".png"
 plt.savefig(file2,format='pdf',bbox_inches="tight")
 plt.savefig(file3,format='png',bbox_inches="tight")
 
-##########################
+###############################################################################################################################
 # Bdip cmb plots
-##########################
+###############################################################################################################################
 
 fitEn    = 10**alldatadict["dipCMB"]["cIMA"]   * Pfit**alldatadict["dipCMB"]["mIMA"]
 fitmac   = 10**alldatadict["dipCMB"]["cMAC"]   * Pfit**alldatadict["dipCMB"]["mMAC"]
@@ -365,9 +356,6 @@ if "MAC" in plt_extrap_scalings:
     if (calc_prefac_err):
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit,
                    label="$m=1/4$ (MAC), $\sigma=$"+str(np.round(alldatadict["dipCMB"]["cMAC_sd"],3)))
-        plt.fill_between(Pfit, fitmac_1sdm, fitmac_1sdp, color=sc_fit[idxMAC], alpha=sc_alpha, zorder=-1)
-        plt.loglog(Pfit, fitmac_3sdm, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
-        plt.loglog(Pfit, fitmac_3sdp, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
     else:
         plt.loglog(Pfit, fitmac, color=lc_fit[idxMAC],linestyle=ls_fit[idxMAC], lw=lw_fit, label="$m=1/4$ (MAC)")
 
@@ -397,9 +385,9 @@ file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
 
-##########################################################
+###############################################################################################################################
 # Zoomed figs plotted using subfigure
-##########################################################
+###############################################################################################################################
 
 # - B rms core
 plt.clf()

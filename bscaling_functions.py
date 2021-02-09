@@ -124,31 +124,31 @@ def getPlotProperties(datadict):
                 datadict[key]["plotp"]["size"] = 150
                 datadict[key]["plotp"]["cmap"] = "Oranges"
                 datadict[key]["plotp"]["edgecolor"] = "orange"
-                datadict[key]["plotp"]["label"] = "Aubert et al (2009)"
+                datadict[key]["plotp"]["label"] = "Mixed"
             elif (datadict[key]["dataset"]=="UC"):
                 datadict[key]["plotp"]["marker"] = "v"
                 datadict[key]["plotp"]["size"] = 150
                 datadict[key]["plotp"]["cmap"] = "Purples"
                 datadict[key]["plotp"]["edgecolor"] = "purple"
-                datadict[key]["plotp"]["label"] = "Christensen 0F"
+                datadict[key]["plotp"]["label"] = "FF0F"
             elif (datadict[key]["dataset"]=="UCt"):
                 datadict[key]["plotp"]["marker"] = "^"
                 datadict[key]["plotp"]["size"] = 150
                 datadict[key]["plotp"]["cmap"] = "Purples"
                 datadict[key]["plotp"]["edgecolor"] = "purple"
-                datadict[key]["plotp"]["label"] = "Christensen FF"
+                datadict[key]["plotp"]["label"] = "FTFF"
             elif (datadict[key]["dataset"]=="Y"):
                 datadict[key]["plotp"]["marker"] = "o"
                 datadict[key]["plotp"]["size"] = 150
                 datadict[key]["plotp"]["cmap"] = "Reds"
                 datadict[key]["plotp"]["edgecolor"] = "red"
-                datadict[key]["plotp"]["label"] = "Yadav et al (2010)"
+                datadict[key]["plotp"]["label"] = "FTFT"
             elif (datadict[key]["dataset"]=="APath"):
                 datadict[key]["plotp"]["marker"] = "D"
                 datadict[key]["plotp"]["size"] = 150
                 datadict[key]["plotp"]["cmap"] = "Greys"
                 datadict[key]["plotp"]["edgecolor"] = "grey"
-                datadict[key]["plotp"]["label"] = "Aubert et al (2017); Aubert (2019)"
+                datadict[key]["plotp"]["label"] = "CE"
             elif (datadict[key]["dataset"]=="S"):
                 datadict[key]["plotp"]["marker"] = "s"
                 datadict[key]["plotp"]["size"] = 150
@@ -208,7 +208,6 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
     
     ax.set_yscale('log')
     ax.set_xscale('log')
-    plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
     plt.rcParams["figure.figsize"] = [15,10]
     
     return ax, legend_xpos, legend_ypos
@@ -220,7 +219,7 @@ def getPlotTitle(myfdip=None, fdip_range= [None]*2, myEr=None, Er_range=[None]*2
         title_str = "$f_{dip}>0.5$"
         comma = True
     elif (myfdip == 2):
-        title_str = "$0.35< f_{dip}<0.80"
+        title_str = "$0.35< f_{dip}<0.80$"
     elif (myfdip == 3):
         title_str = "$0.40< f_{dip}<0.80$"
         comma = True        
