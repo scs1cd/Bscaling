@@ -7,9 +7,10 @@ Created on Sat Jan  9 16:15:55 2021
 
 import numpy as np
 import pandas as pd
-import os
+import os, copy
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from collections import Counter
 
 def idxStr(l1, s):
     idx = []
@@ -109,59 +110,103 @@ def getEarthEstimates(quiet=True):
 
     return Le_earth_dipmin, Le_earth_dipmax, Le_earth_rmsmin, Le_earth_rmsmax, Le_earth_rmscmbmin, Le_earth_rmscmbmax, P_earth_min, P_earth_max
   
-def getPlotProperties(datadict):
-    for key in datadict:
-        if datadict[key]["plot"]:
-            datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
-            if (datadict[key]["dataset"]=="L"):
-                datadict[key]["plotp"]["marker"] = "*"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Blues"
-                datadict[key]["plotp"]["edgecolor"] = "blue"
-                datadict[key]["plotp"]["label"] = "Leeds"
-            elif (datadict[key]["dataset"]=="A"):
-                datadict[key]["plotp"]["marker"] = "^"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Oranges"
-                datadict[key]["plotp"]["edgecolor"] = "orange"
-                datadict[key]["plotp"]["label"] = "Mixed"
-            elif (datadict[key]["dataset"]=="UC"):
-                datadict[key]["plotp"]["marker"] = "v"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Purples"
-                datadict[key]["plotp"]["edgecolor"] = "purple"
-                datadict[key]["plotp"]["label"] = "FF0F"
-            elif (datadict[key]["dataset"]=="UCt"):
-                datadict[key]["plotp"]["marker"] = "^"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Purples"
-                datadict[key]["plotp"]["edgecolor"] = "purple"
-                datadict[key]["plotp"]["label"] = "FTFF"
-            elif (datadict[key]["dataset"]=="Y"):
-                datadict[key]["plotp"]["marker"] = "o"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Reds"
-                datadict[key]["plotp"]["edgecolor"] = "red"
-                datadict[key]["plotp"]["label"] = "FTFT"
-            elif (datadict[key]["dataset"]=="APath"):
-                datadict[key]["plotp"]["marker"] = "D"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Greys"
-                datadict[key]["plotp"]["edgecolor"] = "grey"
-                datadict[key]["plotp"]["label"] = "CE"
-            elif (datadict[key]["dataset"]=="S"):
-                datadict[key]["plotp"]["marker"] = "s"
-                datadict[key]["plotp"]["size"] = 150
-                datadict[key]["plotp"]["cmap"] = "Greens"
-                datadict[key]["plotp"]["edgecolor"] = "green"
-                datadict[key]["plotp"]["label"] = "Schwaiger et al (2019)"
-            else:
-                raise ValueError("Not valid dataset")
+def getPlotProperties(datadict, categorise=False):
+
+    if categorise:
+        for key in datadict:
+            if datadict[key]["plot"]:
+                datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
+                if (datadict[key]["dataset"]=="Mixed"):
+                    datadict[key]["plotp"]["marker"] = "*"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Blues"
+                    datadict[key]["plotp"]["edgecolor"] = "blue"
+                    datadict[key]["plotp"]["label"] = "Mixed"
+                elif (datadict[key]["dataset"]=="FTFF"):
+                    datadict[key]["plotp"]["marker"] = "^"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Oranges"
+                    datadict[key]["plotp"]["edgecolor"] = "orange"
+                    datadict[key]["plotp"]["label"] = "FTFF"
+                elif (datadict[key]["dataset"]=="FFFF"):
+                    datadict[key]["plotp"]["marker"] = "s"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Greens"
+                    datadict[key]["plotp"]["edgecolor"] = "green"
+                    datadict[key]["plotp"]["label"] = "FFFF"
+                elif (datadict[key]["dataset"]=="FF0F"):
+                    datadict[key]["plotp"]["marker"] = "v"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Purples"
+                    datadict[key]["plotp"]["edgecolor"] = "purple"
+                    datadict[key]["plotp"]["label"] = "FF0F"
+                elif (datadict[key]["dataset"]=="FTFT"):
+                    datadict[key]["plotp"]["marker"] = "o"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Reds"
+                    datadict[key]["plotp"]["edgecolor"] = "red"
+                    datadict[key]["plotp"]["label"] = "FTFT"
+                elif (datadict[key]["dataset"]=="CE"):
+                    datadict[key]["plotp"]["marker"] = "D"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Greys"
+                    datadict[key]["plotp"]["edgecolor"] = "grey"
+                    datadict[key]["plotp"]["label"] = "CE"
+                else:
+                    raise ValueError("Not valid dataset")
+    else:
+        for key in datadict:
+            if datadict[key]["plot"]:
+                datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
+                if (datadict[key]["dataset"]=="L"):
+                    datadict[key]["plotp"]["marker"] = "*"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Blues"
+                    datadict[key]["plotp"]["edgecolor"] = "blue"
+                    datadict[key]["plotp"]["label"] = "Leeds"
+                elif (datadict[key]["dataset"]=="A"):
+                    datadict[key]["plotp"]["marker"] = "^"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Oranges"
+                    datadict[key]["plotp"]["edgecolor"] = "orange"
+                    datadict[key]["plotp"]["label"] = "Aubert et al (2009)"
+                elif (datadict[key]["dataset"]=="UC"):
+                    datadict[key]["plotp"]["marker"] = "v"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Purples"
+                    datadict[key]["plotp"]["edgecolor"] = "purple"
+                    datadict[key]["plotp"]["label"] = "Christensen FF0F"
+                elif (datadict[key]["dataset"]=="UCt"):
+                    datadict[key]["plotp"]["marker"] = "^"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Purples"
+                    datadict[key]["plotp"]["edgecolor"] = "purple"
+                    datadict[key]["plotp"]["label"] = "Christensen FTFF"
+                elif (datadict[key]["dataset"]=="Y"):
+                    datadict[key]["plotp"]["marker"] = "o"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Reds"
+                    datadict[key]["plotp"]["edgecolor"] = "red"
+                    datadict[key]["plotp"]["label"] = "Yadav FTFT"
+                elif (datadict[key]["dataset"]=="APath"):
+                    datadict[key]["plotp"]["marker"] = "D"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Greys"
+                    datadict[key]["plotp"]["edgecolor"] = "grey"
+                    datadict[key]["plotp"]["label"] = "CE"
+                elif (datadict[key]["dataset"]=="S"):
+                    datadict[key]["plotp"]["marker"] = "s"
+                    datadict[key]["plotp"]["size"] = 150
+                    datadict[key]["plotp"]["cmap"] = "Greens"
+                    datadict[key]["plotp"]["edgecolor"] = "green"
+                    datadict[key]["plotp"]["label"] = "Schwaiger et al (2019)"
+                else:
+                    raise ValueError("Not valid dataset")
 
     return datadict
 
-def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsINT",
-                    xrange=[0.,1.], yrange=[0.,1.], cbarrange=[0.,1.]):
+def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="rmsINT",
+                    xrange=[0.,1.], yrange=[0.,1.], colorbar=True, cbarrange=[0.,1.]):
 
     if field not in ("rmsINT","rmsCMB","dipCMB"):
         raise ValueError("Not valid field provided.")
@@ -171,29 +216,34 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
     cbarmin = cbarrange[0]; cbarmax = cbarrange[1]
 
     # Now start the plot
-    plt.clf()
-    ax  = plt.gca()
     plt.xlim([xmin,xmax])
     plt.ylim([ymin,ymax])
 
+    if earthdict is not None:
+        ax.add_patch(Rectangle(xy=(earthdict["p"]["min"],earthdict[field]["min"]),
+                               width=(earthdict["p"]["max"]-earthdict["p"]["min"]),
+                               height=(earthdict[field]["max"]-earthdict[field]["min"]),
+                               linewidth=1, color='black', fill=True))
     for key in datadict:
         if datadict[key]["plot"]:
             plt.scatter(datadict[key]["p"], datadict[key][field]["Le"]/datadict[key]["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=cbarmin, vmax=cbarmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"])
-
-    ax.add_patch(Rectangle(xy=(earthdict["p"]["min"],earthdict[field]["min"]),
-                           width=(earthdict["p"]["max"]-earthdict["p"]["min"]),
-                           height=(earthdict[field]["max"]-earthdict[field]["min"]),
-                           linewidth=1, color='black', fill=True))
     legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
-    legend_ypos = 0.95; legend_dy   = 0.05
+    legend_ypos = 0.95; legend_dy   = 0.06
     iplt = 0
     for key in datadict:
         if datadict[key]["plot"]:
+            if (key=="UC"):
+                slope_str = "$m$^ = "
+            elif (key=="UCt"):
+                slope_str = "$m$v = "
+            else:
+                slope_str = "$m$  = "
+     
             plt.text(legend_xpos, legend_ypos-iplt*legend_dy,
-                     "$m$  = "+str(np.round(datadict[key][field]["m"],2)) +\
+                     slope_str+str(np.round(datadict[key][field]["m"],2)) +\
                      "$\pm$"+str(np.round(datadict[key][field]["res"],2)) +\
                      ", SSR="+str(np.round(datadict[key][field]["ssr"],2)),
                      transform=ax.transAxes, color=datadict[key]["plotp"]["edgecolor"])
@@ -202,13 +252,13 @@ def plotSimulations(datadict=None, alldatadict=None, earthdict=None, field="rmsI
     plt.text(legend_xpos, legend_ypos-iplt*legend_dy, "$m$  = "+str(np.round(alldatadict[field]["m"],2))+\
              "$\pm$"+str(np.round(alldatadict[field]["res"],2))+\
              ", SSR="+str(np.round(alldatadict[field]["ssr"],2)), transform=ax.transAxes, color='black')
-    # Plot color bar
-    cbar = plt.colorbar()
-    cbar.set_label("log $Re$")
+    if colorbar:
+        # Plot color bar
+        cbar = plt.colorbar()
+        cbar.set_label("log $Re$")
     
     ax.set_yscale('log')
     ax.set_xscale('log')
-    plt.rcParams["figure.figsize"] = [15,10]
     
     return ax, legend_xpos, legend_ypos
 
@@ -263,10 +313,12 @@ def getFitBounds(x, c, c_sd, m):
     """
     fit_1sdp = 10**(c+c_sd) * x**m
     fit_1sdm = 10**(c-c_sd) * x**m
+    fit_2sdp = 10**(c+2.*c_sd) * x**m
+    fit_2sdm = 10**(c-2.*c_sd) * x**m
     fit_3sdp = 10**(c+3.*c_sd) * x**m
     fit_3sdm = 10**(c-3.*c_sd) * x**m
 
-    return fit_1sdp, fit_1sdm, fit_3sdp, fit_3sdm
+    return fit_1sdp, fit_1sdm, fit_2sdp, fit_2sdm, fit_3sdp, fit_3sdm
 
 def shellVolume(ar):
     """
@@ -545,7 +597,7 @@ def fitForceScalings(indict, quiet=False):
     return indict
 
 def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, EkOPm_range=None, EMoEK_range=None, datadict=None,
-                 chk=0, myfohm=0):
+                 categorise=False, chk=0, myfohm=0):
     """
     This function filters the original tables of simulations by fdip, E/Pm, and EM/EK
     and saves out the filtered table (preserving the original format).
@@ -630,13 +682,21 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         # get fdip and bdip
         datadict["L"]["bdip"] = datadict["L"]["rmsINT"]["Le"]/datadict["L"]["dipCMB"]["Le"]
         datadict["L"]["fdip"] = datadict["L"]["d"]["cmb_diptyAve"]
-        # make fit
-        datadict["L"]["rmsINT"]["ssr"], datadict["L"]["rmsINT"]["m"], datadict["L"]["rmsINT"]["c"], datadict["L"]["rmsINT"]["res"] = \
-            fits(datadict["L"]["p"], datadict["L"]["rmsINT"]["Le"], datadict["L"]["fohm"])
-        datadict["L"]["rmsCMB"]["ssr"], datadict["L"]["rmsCMB"]["m"], datadict["L"]["rmsCMB"]["c"], datadict["L"]["rmsCMB"]["res"] = \
-            fits(datadict["L"]["p"], datadict["L"]["rmsCMB"]["Le"], datadict["L"]["fohm"])
-        datadict["L"]["dipCMB"]["ssr"], datadict["L"]["dipCMB"]["m"], datadict["L"]["dipCMB"]["c"], datadict["L"]["dipCMB"]["res"] = \
-            fits(datadict["L"]["p"], datadict["L"]["dipCMB"]["Le"], datadict["L"]["fohm"])
+
+        if categorise:
+            # store temp BCs and other useful properties for the categorisation of models
+            datadict["L"]["TBC"] = datadict["L"]["d"]["TBC"]
+            datadict["L"]["Ir"] = datadict["L"]["d"]["Ir"]
+            datadict["L"]["ar"] = datadict["L"]["d"]["ar"]
+        
+        if not categorise:
+            # make fit
+            datadict["L"]["rmsINT"]["ssr"], datadict["L"]["rmsINT"]["m"], datadict["L"]["rmsINT"]["c"], datadict["L"]["rmsINT"]["res"] = \
+                fits(datadict["L"]["p"], datadict["L"]["rmsINT"]["Le"], datadict["L"]["fohm"])
+            datadict["L"]["rmsCMB"]["ssr"], datadict["L"]["rmsCMB"]["m"], datadict["L"]["rmsCMB"]["c"], datadict["L"]["rmsCMB"]["res"] = \
+                fits(datadict["L"]["p"], datadict["L"]["rmsCMB"]["Le"], datadict["L"]["fohm"])
+            datadict["L"]["dipCMB"]["ssr"], datadict["L"]["dipCMB"]["m"], datadict["L"]["dipCMB"]["c"], datadict["L"]["dipCMB"]["res"] = \
+                fits(datadict["L"]["p"], datadict["L"]["dipCMB"]["Le"], datadict["L"]["fohm"])
 
     # ---------------------------------
     # - Aubert et al (2009) simulations
@@ -687,13 +747,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["A"]["rmsINT"]["Le"] = datadict["A"]["d"]["Lo"]  
         datadict["A"]["rmsCMB"]["Le"] = datadict["A"]["d"]["Lo"] / (datadict["A"]["d"]["bdip"] * datadict["A"]["d"]["fdip"])
         datadict["A"]["dipCMB"]["Le"] = datadict["A"]["d"]["Lo"] / datadict["A"]["d"]["bdip"]
-        # fits
-        datadict["A"]["rmsINT"]["ssr"], datadict["A"]["rmsINT"]["m"], datadict["A"]["rmsINT"]["c"], datadict["A"]["rmsINT"]["res"] = \
-            fits(datadict["A"]["p"], datadict["A"]["rmsINT"]["Le"], datadict["A"]["fohm"])
-        datadict["A"]["rmsCMB"]["ssr"], datadict["A"]["rmsCMB"]["m"], datadict["A"]["rmsCMB"]["c"], datadict["A"]["rmsCMB"]["res"] = \
-            fits(datadict["A"]["p"], datadict["A"]["rmsCMB"]["Le"], datadict["A"]["fohm"])
-        datadict["A"]["dipCMB"]["ssr"], datadict["A"]["dipCMB"]["m"], datadict["A"]["dipCMB"]["c"], datadict["A"]["dipCMB"]["res"] = \
-            fits(datadict["A"]["p"], datadict["A"]["dipCMB"]["Le"], datadict["A"]["fohm"])
+        if not categorise:
+            # fits
+            datadict["A"]["rmsINT"]["ssr"], datadict["A"]["rmsINT"]["m"], datadict["A"]["rmsINT"]["c"], datadict["A"]["rmsINT"]["res"] = \
+                fits(datadict["A"]["p"], datadict["A"]["rmsINT"]["Le"], datadict["A"]["fohm"])
+            datadict["A"]["rmsCMB"]["ssr"], datadict["A"]["rmsCMB"]["m"], datadict["A"]["rmsCMB"]["c"], datadict["A"]["rmsCMB"]["res"] = \
+                fits(datadict["A"]["p"], datadict["A"]["rmsCMB"]["Le"], datadict["A"]["fohm"])
+            datadict["A"]["dipCMB"]["ssr"], datadict["A"]["dipCMB"]["m"], datadict["A"]["dipCMB"]["c"], datadict["A"]["dipCMB"]["res"] = \
+                fits(datadict["A"]["p"], datadict["A"]["dipCMB"]["Le"], datadict["A"]["fohm"])
 
 
     # -------------------
@@ -747,12 +808,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["Y"]["bdip"]         = datadict["Y"]["rmsINT"]["Le"]/datadict["Y"]["dipCMB"]["Le"] 
         datadict["Y"]["fdip"]         = datadict["Y"]["d"]["Dip_CMB_l11"]
 
-        datadict["Y"]["rmsINT"]["ssr"], datadict["Y"]["rmsINT"]["m"], datadict["Y"]["rmsINT"]["c"], datadict["Y"]["rmsINT"]["res"] = \
-            fits(datadict["Y"]["p"], datadict["Y"]["rmsINT"]["Le"], datadict["Y"]["fohm"])
-        datadict["Y"]["rmsCMB"]["ssr"], datadict["Y"]["rmsCMB"]["m"], datadict["Y"]["rmsCMB"]["c"], datadict["Y"]["rmsCMB"]["res"] = \
-            fits(datadict["Y"]["p"], datadict["Y"]["rmsCMB"]["Le"], datadict["Y"]["fohm"])
-        datadict["Y"]["dipCMB"]["ssr"], datadict["Y"]["dipCMB"]["m"], datadict["Y"]["dipCMB"]["c"], datadict["Y"]["dipCMB"]["res"] = \
-            fits(datadict["Y"]["p"], datadict["Y"]["dipCMB"]["Le"], datadict["Y"]["fohm"])
+        if not categorise:
+            # fits
+            datadict["Y"]["rmsINT"]["ssr"], datadict["Y"]["rmsINT"]["m"], datadict["Y"]["rmsINT"]["c"], datadict["Y"]["rmsINT"]["res"] = \
+                fits(datadict["Y"]["p"], datadict["Y"]["rmsINT"]["Le"], datadict["Y"]["fohm"])
+            datadict["Y"]["rmsCMB"]["ssr"], datadict["Y"]["rmsCMB"]["m"], datadict["Y"]["rmsCMB"]["c"], datadict["Y"]["rmsCMB"]["res"] = \
+                fits(datadict["Y"]["p"], datadict["Y"]["rmsCMB"]["Le"], datadict["Y"]["fohm"])
+            datadict["Y"]["dipCMB"]["ssr"], datadict["Y"]["dipCMB"]["m"], datadict["Y"]["dipCMB"]["c"], datadict["Y"]["dipCMB"]["res"] = \
+                fits(datadict["Y"]["p"], datadict["Y"]["dipCMB"]["Le"], datadict["Y"]["fohm"])
 
         if chk == 1:
             # CHECK: Relate Elsasser to EM, total magnetic energy 
@@ -812,13 +875,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["UC"]["dipCMB"]["Le"] = np.sqrt(datadict["UC"]["E"]/datadict["UC"]["Pm"]) * datadict["UC"]["d"]["Bdip"]
         datadict["UC"]["bdip"]         = datadict["UC"]["rmsINT"]["Le"]/datadict["UC"]["dipCMB"]["Le"]
         datadict["UC"]["fdip"]         = datadict["UC"]["d"]["Bdip"]/datadict["UC"]["d"]["B12"]
-        # fits
-        datadict["UC"]["rmsINT"]["ssr"], datadict["UC"]["rmsINT"]["m"], datadict["UC"]["rmsINT"]["c"], datadict["UC"]["rmsINT"]["res"] = \
-            fits(datadict["UC"]["p"], datadict["UC"]["rmsINT"]["Le"], datadict["UC"]["fohm"])
-        datadict["UC"]["rmsCMB"]["ssr"], datadict["UC"]["rmsCMB"]["m"], datadict["UC"]["rmsCMB"]["c"], datadict["UC"]["rmsCMB"]["res"] = \
-            fits(datadict["UC"]["p"], datadict["UC"]["rmsCMB"]["Le"], datadict["UC"]["fohm"])
-        datadict["UC"]["dipCMB"]["ssr"], datadict["UC"]["dipCMB"]["m"], datadict["UC"]["dipCMB"]["c"], datadict["UC"]["dipCMB"]["res"] = \
-            fits(datadict["UC"]["p"], datadict["UC"]["dipCMB"]["Le"], datadict["UC"]["fohm"])
+        if not categorise:
+            # fits
+            datadict["UC"]["rmsINT"]["ssr"], datadict["UC"]["rmsINT"]["m"], datadict["UC"]["rmsINT"]["c"], datadict["UC"]["rmsINT"]["res"] = \
+                fits(datadict["UC"]["p"], datadict["UC"]["rmsINT"]["Le"], datadict["UC"]["fohm"])
+            datadict["UC"]["rmsCMB"]["ssr"], datadict["UC"]["rmsCMB"]["m"], datadict["UC"]["rmsCMB"]["c"], datadict["UC"]["rmsCMB"]["res"] = \
+                fits(datadict["UC"]["p"], datadict["UC"]["rmsCMB"]["Le"], datadict["UC"]["fohm"])
+            datadict["UC"]["dipCMB"]["ssr"], datadict["UC"]["dipCMB"]["m"], datadict["UC"]["dipCMB"]["c"], datadict["UC"]["dipCMB"]["res"] = \
+                fits(datadict["UC"]["p"], datadict["UC"]["dipCMB"]["Le"], datadict["UC"]["fohm"])
 
         if chk == 1:
             # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
@@ -875,13 +939,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["UCt"]["p"]            = 1e7 * datadict["UCt"]["d"]["pow"] * datadict["UCt"]["E"]**3
         datadict["UCt"]["bdip"]         = datadict["UCt"]["rmsINT"]["Le"]/datadict["UCt"]["dipCMB"]["Le"]
         datadict["UCt"]["fdip"]         = datadict["UCt"]["d"]["Bdip"]/datadict["UCt"]["d"]["B12"]
-        # fits
-        datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = \
-            fits(datadict["UCt"]["p"], datadict["UCt"]["rmsINT"]["Le"], datadict["UCt"]["fohm"])
-        datadict["UCt"]["rmsCMB"]["ssr"], datadict["UCt"]["rmsCMB"]["m"], datadict["UCt"]["rmsCMB"]["c"], datadict["UCt"]["rmsCMB"]["res"] = \
-            fits(datadict["UCt"]["p"], datadict["UCt"]["rmsCMB"]["Le"], datadict["UCt"]["fohm"])
-        datadict["UCt"]["dipCMB"]["ssr"], datadict["UCt"]["dipCMB"]["m"], datadict["UCt"]["dipCMB"]["c"], datadict["UCt"]["dipCMB"]["res"] = \
-            fits(datadict["UCt"]["p"], datadict["UCt"]["dipCMB"]["Le"], datadict["UCt"]["fohm"])
+        if not categorise:
+            # fits
+            datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = \
+                fits(datadict["UCt"]["p"], datadict["UCt"]["rmsINT"]["Le"], datadict["UCt"]["fohm"])
+            datadict["UCt"]["rmsCMB"]["ssr"], datadict["UCt"]["rmsCMB"]["m"], datadict["UCt"]["rmsCMB"]["c"], datadict["UCt"]["rmsCMB"]["res"] = \
+                fits(datadict["UCt"]["p"], datadict["UCt"]["rmsCMB"]["Le"], datadict["UCt"]["fohm"])
+            datadict["UCt"]["dipCMB"]["ssr"], datadict["UCt"]["dipCMB"]["m"], datadict["UCt"]["dipCMB"]["c"], datadict["UCt"]["dipCMB"]["res"] = \
+                fits(datadict["UCt"]["p"], datadict["UCt"]["dipCMB"]["Le"], datadict["UCt"]["fohm"])
 
         if chk == 1:
             # CHECK: Relate Elsasser to Em, magnetic energy density (i.e. per unit volume)
@@ -931,13 +996,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["APath"]['rmsINT']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['Pm'])   * datadict["APath"]['d']['Els'])
         datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['Pm']) ) * datadict["APath"]['d']['rmsCMBtotal']
         datadict["APath"]['dipCMB']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['Pm']) ) * datadict["APath"]['d']['RMSCMBl=1']
-        # fit
-        datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = \
-            fits(datadict["APath"]['p'], datadict["APath"]['rmsINT']['Le'], datadict["APath"]['fohm'])
-        datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = \
-            fits(datadict["APath"]['p'], datadict["APath"]['rmsCMB']['Le'], datadict["APath"]['fohm'])
-        datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = \
-            fits(datadict["APath"]['p'], datadict["APath"]['dipCMB']['Le'], datadict["APath"]['fohm'])
+        if not categorise:
+            # fit
+            datadict["APath"]['rmsINT']['ssr'], datadict["APath"]['rmsINT']['m'], datadict["APath"]['rmsINT']['c'], datadict["APath"]['rmsINT']['res'] = \
+                fits(datadict["APath"]['p'], datadict["APath"]['rmsINT']['Le'], datadict["APath"]['fohm'])
+            datadict["APath"]['rmsCMB']['ssr'], datadict["APath"]['rmsCMB']['m'], datadict["APath"]['rmsCMB']['c'], datadict["APath"]['rmsCMB']['res'] = \
+                fits(datadict["APath"]['p'], datadict["APath"]['rmsCMB']['Le'], datadict["APath"]['fohm'])
+            datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = \
+                fits(datadict["APath"]['p'], datadict["APath"]['dipCMB']['Le'], datadict["APath"]['fohm'])
 
     # -------------------------
     # Schwaiger 2019
@@ -983,12 +1049,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["S"]['rmsCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm']) ) * datadict["S"]['d']['rmsCMBtotal']
         datadict["S"]['dipCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm']) ) * datadict["S"]['d']['RMSCMBl=1']
 
-        datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = \
-            fits(datadict["S"]['p'], datadict["S"]['rmsINT']['Le'], datadict["S"]['fohm'])
-        datadict["S"]['rmsCMB']['ssr'], datadict["S"]['rmsCMB']['m'], datadict["S"]['rmsCMB']['c'], datadict["S"]['rmsCMB']['res'] = \
-            fits(datadict["S"]['p'], datadict["S"]['rmsCMB']['Le'], datadict["S"]['fohm'])
-        datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = \
-            fits(datadict["S"]['p'], datadict["S"]['dipCMB']['Le'], datadict["S"]['fohm'])
+        if not categorise:
+            # fits
+            datadict["S"]['rmsINT']['ssr'], datadict["S"]['rmsINT']['m'], datadict["S"]['rmsINT']['c'], datadict["S"]['rmsINT']['res'] = \
+                fits(datadict["S"]['p'], datadict["S"]['rmsINT']['Le'], datadict["S"]['fohm'])
+            datadict["S"]['rmsCMB']['ssr'], datadict["S"]['rmsCMB']['m'], datadict["S"]['rmsCMB']['c'], datadict["S"]['rmsCMB']['res'] = \
+                fits(datadict["S"]['p'], datadict["S"]['rmsCMB']['Le'], datadict["S"]['fohm'])
+            datadict["S"]['dipCMB']['ssr'], datadict["S"]['dipCMB']['m'], datadict["S"]['dipCMB']['c'], datadict["S"]['dipCMB']['res'] = \
+                fits(datadict["S"]['p'], datadict["S"]['dipCMB']['Le'], datadict["S"]['fohm'])
     else:
         raise ValueError("Not valid dataset")
 
@@ -1041,3 +1109,106 @@ def plot_bdip(datadict, myfdip):
     plt.tight_layout()
     plt.savefig('./fig/bdip_vs_P_fdip='+str(myfdip)+'.pdf',format='pdf')
     del ax
+
+def mergeDict(d1, d2):
+    if (d1.keys() != d2.keys()):
+        print(d1.keys())
+        print(d2.keys())
+        raise ValueError("d1 and d2 do not have the same keys.")
+    
+    if (d1["plot"] and d2["plot"]):
+        newd = {"rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}
+        newd["plot"] = True
+        newd["dataset"] = d1["dataset"]+"+"+d2["dataset"]
+        newd["nsims"] = d1["nsims"]+d2["nsims"]
+        for key in d1:
+            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip"]):
+                newd[key] = np.concatenate((d1[key], d2[key]))
+            if (key in ["rmsINT", "rmsCMB", "dipCMB"]):
+                newd[key]["Le"] = np.concatenate((d1[key]["Le"], d2[key]["Le"]))
+    elif (d1["plot"] and not d2["plot"]):
+        newd = copy.deepcopy(d1)
+    elif (not d1["plot"] and d2["plot"]):
+        newd = copy.deepcopy(d2)
+    
+    return newd
+
+def filterLeedsDict(d1, fkey="TBC", condition="==FTFF"):
+    newd = {"rmsINT":{}, "rmsCMB":{}, "dipCMB":{}}
+    # find array elements to filter
+    idx = []
+    for key in d1:
+        if (key in [fkey]):
+            for i in range(len(d1[key])):
+                if (eval("d1[key][i]"+condition)):
+                    idx.append(i)
+    if (len(idx)==0):
+        print("")
+        print("Nothing to filter for "+fkey+condition)
+        d1["plot"] = False
+        return d1
+    else:
+        idx = np.asarray(idx)
+        # filter all keys
+        for key in d1:
+            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip","TBC","Ir","ar"]):
+                newd[key] = d1[key][idx]
+            if (key in ["rmsINT", "rmsCMB", "dipCMB"]):
+                newd[key]["Le"] = d1[key]["Le"][idx]
+        newd["plot"]    = False
+        newd["nsims"]   = len(newd["E"])
+        newd["dataset"] = d1["dataset"]
+        newd["plotp"]   = d1["plotp"]
+        return newd
+
+def redefineDataDict(indict, quiet=False):
+    """
+    redefines data dictionaries by author to different
+    categorisations.
+    """
+    # clean up author's dictionaries from not useful keys
+    for k in indict.keys():
+        del indict[k]["d"]
+
+    # define new dictionary
+    newdict = {"FTFT":{}, "FTFF":{}, "FF0F":{}, "FFFF":{}, "CE":{}, "Mixed":{}}
+    # merge/redefine
+    newdict["FTFT"] = mergeDict(indict["S"], indict["Y"])
+    newdict["FF0F"] = copy.deepcopy(indict["UC"])
+    newdict["CE"]   = copy.deepcopy(indict["APath"])
+
+    # filter Leeds simulations
+    dL_Ir0   = filterLeedsDict(indict["L"], fkey="Ir", condition="==0.")
+    dL_FTFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FTFF'")
+    dL_FFFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FFFF'")
+    dL_mixed = filterLeedsDict(indict["L"], fkey="Ir", condition="!=0.")
+   
+    # delete unseful stuff 
+    del dL_FTFF["TBC"], dL_FTFF["Ir"], dL_FTFF["ar"]
+    del dL_FFFF["TBC"], dL_FFFF["Ir"], dL_FFFF["ar"]
+    del dL_mixed["TBC"], dL_mixed["Ir"], dL_mixed["ar"]
+
+    # merge with other simulations data
+    newdict["FFFF"]  = copy.deepcopy(dL_FFFF)
+    newdict["FTFF"]  = mergeDict(indict["UCt"], dL_FTFF)
+    newdict["Mixed"] = mergeDict(indict["A"], dL_mixed)
+   
+    # redefine "dataset" key
+    newdict["FTFT"]["dataset"]  = "FTFT" 
+    newdict["FFFF"]["dataset"]  = "FFFF"
+    newdict["FF0F"]["dataset"]  = "FF0F"
+    newdict["FTFF"]["dataset"]  = "FTFF"
+    newdict["Mixed"]["dataset"] = "Mixed"
+    newdict["CE"]["dataset"]    = "CE"
+    
+    # fit field strengths of these merged datasets
+    print("")
+    for key in newdict:
+        print("Fitting new datset: ",key)
+        newdict[key]['rmsINT']['ssr'], newdict[key]['rmsINT']['m'], newdict[key]['rmsINT']['c'], newdict[key]['rmsINT']['res'] = \
+            fits(newdict[key]['p'], newdict[key]['rmsINT']['Le'], newdict[key]['fohm'])
+        newdict[key]['rmsCMB']['ssr'], newdict[key]['rmsCMB']['m'], newdict[key]['rmsCMB']['c'], newdict[key]['rmsCMB']['res'] = \
+            fits(newdict[key]['p'], newdict[key]['rmsCMB']['Le'], newdict[key]['fohm'])
+        newdict[key]['dipCMB']['ssr'], newdict[key]['dipCMB']['m'], newdict[key]['dipCMB']['c'], newdict[key]['dipCMB']['res'] = \
+            fits(newdict[key]['p'], newdict[key]['dipCMB']['Le'], newdict[key]['fohm'])
+    return newdict
