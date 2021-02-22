@@ -229,9 +229,12 @@ def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="
             plt.scatter(datadict[key]["p"], datadict[key][field]["Le"]/datadict[key]["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=cbarmin, vmax=cbarmax,
-                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"])
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
+                        label=datadict[key]["plotp"]["label"])
+    
     legend_xpos = 0.01 # x-position of legend (>1, outside of main plot)
-    legend_ypos = 0.95; legend_dy   = 0.06
+    legend_ypos = 0.93; legend_dy   = 0.065 # ypos of legend
+    
     iplt = 0
     for key in datadict:
         if datadict[key]["plot"]:
@@ -1200,7 +1203,7 @@ def redefineDataDict(indict, quiet=False):
     newdict["FTFF"]["dataset"]  = "FTFF"
     newdict["Mixed"]["dataset"] = "Mixed"
     newdict["CE"]["dataset"]    = "CE"
-    
+
     # fit field strengths of these merged datasets
     print("")
     for key in newdict:

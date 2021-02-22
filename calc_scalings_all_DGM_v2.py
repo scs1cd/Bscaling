@@ -3,7 +3,7 @@ import bscaling_functions as b
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':'12'})
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'], 'size':'18'})
 rc('text', usetex=False)
 
 # ---------------------------------------------------------------------------------------
@@ -11,7 +11,7 @@ rc('text', usetex=False)
 # ---------------------------------------------------------------------------------------
 
 calc_prefac_err = True # Calculate and plot prefactor error?
-myfdip  = 1 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
+myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
 myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
@@ -21,19 +21,19 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2e0,1.e+19]
+    EMoEK_range = [2e-15,1.e+19]
 else:
     EMoEK_range = None
     
 # List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
 # IMA (or Energy below) corresponds to QG-MAC in the new notation.
-#plt_extrap_scalings = ["IMA", "MAC"]
-plt_extrap_scalings = [""]
-lc_fit              = ["g",  "darkgrey"] # Line colour of fits
+plt_extrap_scalings = ["IMA", "MAC"]
+# = [""]
+lc_fit              = ["g",  "g"]                 # Line colour of fits
 sc_fit              = ["lightgreen", "lightgrey"] # Shading colour for \sigma intervals
-sc_alpha            = 0.7
-ls_fit              = ["--", ":"] # Line style of fits
-lw_fit = 2. # Line-width of fits in plots
+sc_alpha            = 0.5
+ls_fit              = ["--", ":"]                 # Line style of fits
+lw_fit = 2.                                       # Line-width of fits in plots
 chk    = 0 # Use 1 to print on screen checks of energy (quiet otherwise)
 
 # Internal consistency check of Leeds sims. It compares the cmb (total and dipole) field strengths
@@ -44,7 +44,9 @@ plt_bdip = False
 # Categorise simulations by driving? (plots are by authors otherwise)
 # Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE
 categorise = True
-plt_categ  = ["FTFT", "FFFF", "FF0F", "FTFF", "Mixed", "CE"]
+#plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed", "CE"]
+plt_categ  = ["FTFF"]
+
 # ---------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------
 
@@ -240,13 +242,13 @@ if calc_prefac_err:
 
 # Plot simulations
 plt.clf()
-plt.rcParams["figure.figsize"] = [15,10]
+plt.rcParams["figure.figsize"] = [16,6]
 ax = plt.gca()
-ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsINT",
+ax, dd_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsINT",
                                                  cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[3e-5,0.2])
 plt.loglog(Pfit, fitall, color="k", lw=lw_fit, zorder=2)
 if (calc_prefac_err):
-    plt.fill_between(Pfit, fitall_2sdm, fitall_2sdp, color="k", alpha=0.3, zorder=-1)
+    plt.fill_between(Pfit, fitall_2sdm, fitall_2sdp, color="k", alpha=0.1, zorder=-1)
     plt.loglog(Pfit, fitall_1sdm, color="k", lw=0.5, ls='--', zorder=0) 
     plt.loglog(Pfit, fitall_1sdp, color="k", lw=0.5, ls='--', zorder=0) 
 
@@ -260,7 +262,7 @@ if "IMA" in plt_extrap_scalings:
     idxIMA = b.idxStr(plt_extrap_scalings, "IMA")[0]
     if (calc_prefac_err):
         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit,
-                   label="$m=1/3$ (QG-MAC), $\sigma=$"+str(np.round(alldatadict["rmsINT"]["cIMA_sd"],3)))
+                   label="$m=1/3$, $\sigma=$"+str(np.round(alldatadict["rmsINT"]["cIMA_sd"],3)))
         plt.fill_between(Pfit, fitEn_1sdm, fitEn_1sdp, color=sc_fit[idxIMA], alpha=sc_alpha, zorder=-1)
     else:
         plt.loglog(Pfit, fitEn, c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit, label="$m=1/3$ (QG-MAC)")
@@ -268,7 +270,7 @@ if "MAC" in plt_extrap_scalings:
     idxMAC = b.idxStr(plt_extrap_scalings, "MAC")[0]
     if (calc_prefac_err):
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit,
-                   label="$m=1/4$ (MAC), $\sigma=$"+str(np.round(alldatadict["rmsINT"]["cMAC_sd"],3)))
+                   label="$m=1/4$, $\sigma=$"+str(np.round(alldatadict["rmsINT"]["cMAC_sd"],3)))
         #plt.fill_between(Pfit, fitmac_1sdm, fitmac_1sdp, color=sc_fit[idxMAC], alpha=sc_alpha, zorder=-1)
         #plt.loglog(Pfit, fitmac_3sdm, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)  #3sigma bounds on MAC
         #plt.loglog(Pfit, fitmac_3sdp, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=1., zorder=-1)
@@ -285,7 +287,8 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title(title_str)
-plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.10), loc=3, ncol=2, borderaxespad=0)
+plt.legend(bbox_to_anchor=(0.45, 0.01), loc=3, ncol=3, borderaxespad=0, 
+           labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
 
 # save figure
 file2 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
@@ -300,6 +303,7 @@ file2 += ".pdf"
 file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
+
 ###############################################################################################################################
 # Brms CMB FIELD
 ###############################################################################################################################
@@ -314,13 +318,13 @@ fitimaci = 10**alldatadict["rmsCMB"]["cIMACi"] * Pfit**alldatadict["rmsCMB"]["mI
 # Plot simulations
 del ax
 plt.clf()
-plt.rcParams["figure.figsize"] = [15,10]
+plt.rcParams["figure.figsize"] = [16,6]
 ax = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsCMB",
                                                  cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2])
 plt.loglog(Pfit ,fitrmscmb, color="k", lw=lw_fit)
 if (calc_prefac_err):
-    plt.fill_between(Pfit, fitrmscmb_2sdm, fitrmscmb_2sdp, color="k", alpha=0.3, zorder=-1)
+    plt.fill_between(Pfit, fitrmscmb_2sdm, fitrmscmb_2sdp, color="k", alpha=0.1, zorder=-1)
     plt.loglog(Pfit, fitrmscmb_1sdm, color="k", lw=0.5, ls='--', zorder=0) 
     plt.loglog(Pfit, fitrmscmb_1sdp, color="k", lw=0.5, ls='--', zorder=0) 
 if "IMAC" in plt_extrap_scalings:
@@ -345,6 +349,8 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title(title_str)
+plt.legend(bbox_to_anchor=(0.45, 0.01), loc=3, ncol=3, borderaxespad=0, 
+           labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
 
 file2 = "./fig/Lefohm_PA_Brmscmbextrap_fdip=" + fdipn + "_fohm=" + fohmn
 file3 = "./fig/Lefohm_PA_Brmscmbextrap_fdip=" + fdipn + "_fohm=" + fohmn
@@ -379,14 +385,14 @@ if calc_prefac_err:
 # Plot simulations
 del ax
 plt.clf()
-plt.rcParams["figure.figsize"] = [15,10]
+plt.rcParams["figure.figsize"] = [16,6]
 ax = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict,
                                                  field="dipCMB",
                                                  cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2])
 plt.loglog(Pfit, fitdipcmb, color="k", lw=lw_fit)
 if (calc_prefac_err):
-    plt.fill_between(Pfit, fitdipcmb_2sdm, fitdipcmb_2sdp, color="k", alpha=0.3, zorder=-1)
+    plt.fill_between(Pfit, fitdipcmb_2sdm, fitdipcmb_2sdp, color="k", alpha=0.1, zorder=-1)
     plt.loglog(Pfit, fitdipcmb_1sdm, color="k", lw=0.5, ls='--', zorder=0) 
     plt.loglog(Pfit, fitdipcmb_1sdp, color="k", lw=0.5, ls='--', zorder=0) 
 #           label="$m =$"+str(np.round(mdipcmb ,2))+"$\pm$"+str(np.round(resdipcmb ,2))+", SSR="+str(np.round(ssrdipcmb,2)))
@@ -401,15 +407,15 @@ if "IMACi" in plt_extrap_scalings:
 if "IMA" in plt_extrap_scalings:
     if (calc_prefac_err):
         plt.loglog(Pfit, fitEn,      c=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit,
-                   label="$m=1/3$ (QG-MAC), $\sigma=$"+str(np.round(alldatadict["dipCMB"]["cIMA_sd"],3)))
+                   label="$m=1/3$, $\sigma=$"+str(np.round(alldatadict["dipCMB"]["cIMA_sd"],3)))
         plt.fill_between(Pfit, fitEn_1sdm, fitEn_1sdp, color=sc_fit[idxIMA], alpha=sc_alpha, zorder=-1)
     else:
         plt.loglog(Pfit, fitEn, color=lc_fit[idxIMA], linestyle=ls_fit[idxIMA], lw=lw_fit,
-                   label="$m=1/3$ (QG-MAC)")
+                   label="$m=1/3$")
 if "MAC" in plt_extrap_scalings:
     if (calc_prefac_err):
         plt.loglog(Pfit, fitmac, c=lc_fit[idxMAC], linestyle=ls_fit[idxMAC], lw=lw_fit,
-                   label="$m=1/4$ (MAC), $\sigma=$"+str(np.round(alldatadict["dipCMB"]["cMAC_sd"],3)))
+                   label="$m=1/4$, $\sigma=$"+str(np.round(alldatadict["dipCMB"]["cMAC_sd"],3)))
     else:
         plt.loglog(Pfit, fitmac, color=lc_fit[idxMAC],linestyle=ls_fit[idxMAC], lw=lw_fit, label="$m=1/4$ (MAC)")
 
@@ -420,8 +426,8 @@ elif myfohm ==1:
     plt.ylabel('$Le_{\\rm{cmb}}^{l=1}$')
 ax.set_yscale('log')
 ax.set_xscale('log')
-plt.legend(bbox_to_anchor=(legend_xpos-0.1, 1.1), loc=3, ncol=2, borderaxespad=0)
-plt.rcParams["figure.figsize"] = [15,10]
+plt.legend(bbox_to_anchor=(0.45, 0.01), loc=3, ncol=3, borderaxespad=0, 
+           labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
 
 if myEr==1:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
@@ -456,7 +462,11 @@ ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatad
                                                  colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2])
 plt.loglog(Pfit , fitall, color="black")
 plt.loglog(5e-12 , 2e-4, marker="s", markersize=30)
-
+if (calc_prefac_err):
+    plt.loglog(Pfit,fitall_1sdp,c='k',ls=':',lw=1.)
+    plt.loglog(Pfit,fitall_1sdm,c='k',ls=':',lw=1.)
+    plt.fill_between(Pfit, fitall_1sdp, fitall_1sdm, color="k", alpha=0.1, zorder=-1)
+    
 if myfohm == 0: 
     plt.ylabel('$Le_t^{rms}/f_{ohm}^{1/2}$')
 elif myfohm == 1: 
@@ -466,9 +476,7 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title("Field strength vs Buoyant power for "+title_str)
-plt.legend(bbox_to_anchor=(0.73, 0.05), loc=3, borderaxespad=0)
-#file2="./fig/Lefohm_PA_Brmsallzoom_fdip=" + fdipn + "_fohm=" + fohmn + ".pdf"
-#plt.savefig(file2, format='pdf',bbox_inches="tight")
+plt.legend(bbox_to_anchor=(0.8, 0.05), loc=3, borderaxespad=0)
 
 # - Brms at CMB
 del ax
@@ -478,14 +486,15 @@ ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatad
                                                  colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2])
 plt.loglog(Pfit,fitrmscmb,color="black")
 plt.loglog(5e-12 , 2e-4, marker="s", markersize=30)
-
+if (calc_prefac_err):
+    plt.loglog(Pfit,fitrmscmb_1sdp,c='k',ls=':',lw=1.)
+    plt.loglog(Pfit,fitrmscmb_1sdm,c='k',ls=':',lw=1.)
+    plt.fill_between(Pfit, fitrmscmb_1sdp, fitrmscmb_1sdm, color="k", alpha=0.1, zorder=-1)
+    
 if myfohm == 0: 
     plt.ylabel('$Le_{cmb}^{rms}/f_{ohm}^{1/2}$')
 elif myfohm == 1: 
     plt.ylabel('$Le_{cmb}^{rms}$')
-#plt.legend(bbox_to_anchor=(0.05, 0.70), loc=3, borderaxespad=0)
-#file2="./fig/Lefohm_PA_Brmscmb_fdip=" + fdipn + "_fohm=" + fohmn + ".pdf"
-#plt.savefig(file2, format='pdf',bbox_inches="tight")
 
 # - Bdip at CMB
 del ax
@@ -497,6 +506,7 @@ plt.loglog(Pfit,fitdipcmb,color="black")
 if (calc_prefac_err):
     plt.loglog(Pfit,fitdipcmb_1sdp,c='k',ls=':',lw=1.)
     plt.loglog(Pfit,fitdipcmb_1sdm,c='k',ls=':',lw=1.)
+    plt.fill_between(Pfit, fitdipcmb_1sdp, fitdipcmb_1sdm, color="k", alpha=0.1, zorder=-1)
     #plt.loglog(Pfit,fitdipcmb_3sdp,c='k',ls='--',lw=1.)
     #plt.loglog(Pfit,fitdipcmb_3sdm,c='k',ls='--',lw=1.)
 plt.xlabel('$P_A$')
