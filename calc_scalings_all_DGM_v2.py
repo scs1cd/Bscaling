@@ -11,7 +11,7 @@ rc('text', usetex=False)
 # ---------------------------------------------------------------------------------------
 
 calc_prefac_err = True # Calculate and plot prefactor error?
-myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
+myfdip  = 1 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
 myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
@@ -21,12 +21,12 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2e-15,1.e+19]
+    EMoEK_range = [2.,1.e+19]
 else:
     EMoEK_range = None
     
-# List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
-# IMA (or Energy below) corresponds to QG-MAC in the new notation.
+# -- List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
+#    IMA (or Energy below) corresponds to QG-MAC in the new notation.
 plt_extrap_scalings = ["IMA", "MAC"]
 # = [""]
 lc_fit              = ["g",  "g"]                 # Line colour of fits
@@ -36,19 +36,23 @@ ls_fit              = ["--", ":"]                 # Line style of fits
 lw_fit = 2.                                       # Line-width of fits in plots
 chk    = 0 # Use 1 to print on screen checks of energy (quiet otherwise)
 
-# Internal consistency check of Leeds sims. It compares the cmb (total and dipole) field strengths
-# calculated from mag_cmb-files and Gauss coeffs-files.
+# -- Internal consistency check of Leeds sims. It compares the cmb (total and dipole) field strengths
+#    calculated from mag_cmb-files and Gauss coeffs-files.
 check_gauss_Led = False
-# Plot and analyse bdip?
+# -- Plot and analyse bdip?
 plt_bdip = False
-# Categorise simulations by driving? (plots are by authors otherwise)
-# Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE
+# -- Categorise simulations by driving? (plots are by authors otherwise)
+#    Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE
 categorise = True
 #plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed", "CE"]
-plt_categ  = ["FTFF"]
+plt_categ  = ["CE"]
+# -- write out file of databases for check?
+write_check = False
+outf_check  = './data/Dataset_FILTERED'
 
-# ---------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------
 
 # Create dictionaries of datasets
 datadict = {"L":{    "plot":True, "dataset":"L",     "d":{}, "rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}},
@@ -146,7 +150,14 @@ if categorise:
     if ("FF0F" in plt_categ) : datadict["FF0F"]["plot"] = True 
     if ("FTFF" in plt_categ) : datadict["FTFF"]["plot"] = True 
     if ("Mixed" in plt_categ): datadict["Mixed"]["plot"] = True 
-    if ("CE" in plt_categ)   : datadict["CE"]["plot"] = True 
+    if ("CE" in plt_categ)   : datadict["CE"]["plot"] = True
+
+if write_check:
+    # write filtered datasets in output file:
+    b.writefilecheck(datadict, outfiletag=outf_check)
+
+# check by saving out filtered datasets
+# ----------
 
 # get output file name of fitted slopes and pre-factors
 outfpath = "./"
@@ -223,7 +234,7 @@ b.savePrefacValues(filename=outfpath+outfnamepf, indict=alldatadict, l_prefac_er
 earthdict["dipCMB"]["min"], earthdict["dipCMB"]["max"], earthdict["rmsINT"]["min"], earthdict["rmsINT"]["max"],\
     earthdict["rmsCMB"]["min"], earthdict["rmsCMB"]["max"], earthdict["p"]["min"], earthdict["p"]["max"] = b.getEarthEstimates(quiet=False)
 
-#########################################################################################################################################################
+###############################################################################################################################
 # Brms INTERNAL FIELD
 ###############################################################################################################################
 
@@ -287,8 +298,10 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title(title_str)
-plt.legend(bbox_to_anchor=(0.45, 0.01), loc=3, ncol=3, borderaxespad=0, 
-           labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
+leg = plt.legend(bbox_to_anchor=(0., 1.12), loc=3, ncol=2, borderaxespad=0, 
+                 labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
+for lh in leg.legendHandles:
+    lh.set_linewidth(3.)
 
 # save figure
 file2 = "./fig/Lefohm_PA_Brmsextrap_fdip=" + fdipn + "_fohm=" + fohmn
@@ -303,7 +316,6 @@ file2 += ".pdf"
 file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
-
 ###############################################################################################################################
 # Brms CMB FIELD
 ###############################################################################################################################
@@ -349,8 +361,10 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title(title_str)
-plt.legend(bbox_to_anchor=(0.45, 0.01), loc=3, ncol=3, borderaxespad=0, 
-           labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
+leg = plt.legend(bbox_to_anchor=(0., 1.12), loc=3, ncol=2, borderaxespad=0, 
+                 labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
+for lh in leg.legendHandles:
+    lh.set_linewidth(3.)
 
 file2 = "./fig/Lefohm_PA_Brmscmbextrap_fdip=" + fdipn + "_fohm=" + fohmn
 file3 = "./fig/Lefohm_PA_Brmscmbextrap_fdip=" + fdipn + "_fohm=" + fohmn
@@ -426,8 +440,11 @@ elif myfohm ==1:
     plt.ylabel('$Le_{\\rm{cmb}}^{l=1}$')
 ax.set_yscale('log')
 ax.set_xscale('log')
-plt.legend(bbox_to_anchor=(0.45, 0.01), loc=3, ncol=3, borderaxespad=0, 
-           labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
+
+leg = plt.legend(bbox_to_anchor=(0., 1.12), loc=3, ncol=2, borderaxespad=0, 
+                 labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
+for lh in leg.legendHandles:
+    lh.set_linewidth(3.)
 
 if myEr==1:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
@@ -476,8 +493,15 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title("Field strength vs Buoyant power for "+title_str)
-plt.legend(bbox_to_anchor=(0.8, 0.05), loc=3, borderaxespad=0)
-
+leg = plt.legend(bbox_to_anchor=(0.8, 0.05), loc=3, borderaxespad=0)
+for lh in leg.legendHandles:
+    lh.set_linewidth(3.)
+"""
+# --- DGM for improving the legend, try something like:
+line = Line2D([], [], label='abc', color='red', linewidth=1.5, marker=ur'$\u25CC$',
+              markeredgecolor='indigo', markeredgewidth=0.5, markersize=16)
+plt.legend(handles=[line], numpoints=1)
+"""
 # - Brms at CMB
 del ax
 plt.subplot(3,1,2)

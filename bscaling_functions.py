@@ -641,6 +641,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
     # -------------------
     if dataset == "Leeds":
         df = pd.read_csv(infname)
+
         if filter_fdip:
             # Filter fdip
             mask_fdip = (df['cmb_diptyAve'] > fdip_min) & (df['cmb_diptyAve'] < fdip_max)
@@ -665,6 +666,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["L"]["E"]  = datadict["L"]["d"]["Ek"]
         datadict["L"]["Pm"] = datadict["L"]["d"]["Pm"]
         datadict["L"]["Rm"] = datadict["L"]["d"]["RmAve"]
+        datadict["L"]["MEKE"] = datadict["L"]["d"]["EkinAve"]/datadict["L"]["d"]["EmagAve"]
         
         # Calculate shell volume
         ar = datadict["L"]["d"]["ar"] # aspect ratio
@@ -738,6 +740,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["A"]["Pm"]   = datadict["A"]["d"]["Pm"]
         datadict["A"]["Rm"]   = datadict["A"]["d"]["Ro"] / datadict["A"]["E"] * datadict["A"]["Pm"]
         datadict["A"]["fohm"] = datadict["A"]["d"]["fohm"]
+        datadict["A"]["MEKE"] = datadict["A"]["d"]["Lo"]**2/datadict["A"]["d"]["Ro"]**2
 
         if myfohm == 1:
             fohmA = np.ones(len(datadict["A"]["d"]["fohm"]))
@@ -758,8 +761,6 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
                 fits(datadict["A"]["p"], datadict["A"]["rmsCMB"]["Le"], datadict["A"]["fohm"])
             datadict["A"]["dipCMB"]["ssr"], datadict["A"]["dipCMB"]["m"], datadict["A"]["dipCMB"]["c"], datadict["A"]["dipCMB"]["res"] = \
                 fits(datadict["A"]["p"], datadict["A"]["dipCMB"]["Le"], datadict["A"]["fohm"])
-
-
     # -------------------
     # - Yadav simulations
     # -------------------
@@ -796,9 +797,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["Y"]["d"] = convertDictKeys(datadict["Y"]["d"])
 
         # Calculate output measures and perform fits
-        datadict["Y"]["E"]  = datadict["Y"]["d"]["E"]
-        datadict["Y"]["Pm"] = datadict["Y"]["d"]["Pm"]
-        datadict["Y"]["Rm"] = datadict["Y"]["d"]["Re"]*datadict["Y"]["d"]["Pm"]
+        datadict["Y"]["E"]    = datadict["Y"]["d"]["E"]
+        datadict["Y"]["Pm"]   = datadict["Y"]["d"]["Pm"]
+        datadict["Y"]["Rm"]   = datadict["Y"]["d"]["Re"]*datadict["Y"]["d"]["Pm"]
+        datadict["Y"]["MEKE"] = (datadict["Y"]["d"]["ME_tor"]+datadict["Y"]["d"]["ME_pol"])/(datadict["Y"]["d"]["KE_tor"]+datadict["Y"]["d"]["KE_pol"])
+
         if myfohm == 1:
             datadict["Y"]["fohm"] = np.ones(len(datadict["Y"]["d"]["Ohm_diss"]))
         else:
@@ -878,6 +881,8 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["UC"]["dipCMB"]["Le"] = np.sqrt(datadict["UC"]["E"]/datadict["UC"]["Pm"]) * datadict["UC"]["d"]["Bdip"]
         datadict["UC"]["bdip"]         = datadict["UC"]["rmsINT"]["Le"]/datadict["UC"]["dipCMB"]["Le"]
         datadict["UC"]["fdip"]         = datadict["UC"]["d"]["Bdip"]/datadict["UC"]["d"]["B12"]
+        datadict["UC"]["MEKE"]         = datadict["UC"]["d"]["Emag"]/datadict["UC"]["d"]["Ekin"]
+
         if not categorise:
             # fits
             datadict["UC"]["rmsINT"]["ssr"], datadict["UC"]["rmsINT"]["m"], datadict["UC"]["rmsINT"]["c"], datadict["UC"]["rmsINT"]["res"] = \
@@ -942,6 +947,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["UCt"]["p"]            = 1e7 * datadict["UCt"]["d"]["pow"] * datadict["UCt"]["E"]**3
         datadict["UCt"]["bdip"]         = datadict["UCt"]["rmsINT"]["Le"]/datadict["UCt"]["dipCMB"]["Le"]
         datadict["UCt"]["fdip"]         = datadict["UCt"]["d"]["Bdip"]/datadict["UCt"]["d"]["B12"]
+        datadict["UCt"]["MEKE"]         = datadict["UCt"]["d"]["Emag"]/datadict["UCt"]["d"]["Ekin"]
         if not categorise:
             # fits
             datadict["UCt"]["rmsINT"]["ssr"], datadict["UCt"]["rmsINT"]["m"], datadict["UCt"]["rmsINT"]["c"], datadict["UCt"]["rmsINT"]["res"] = \
@@ -995,6 +1001,8 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["APath"]['Rm']   = datadict["APath"]['d']['Rm']
         datadict["APath"]['fdip'] = datadict["APath"]['d']['RMSCMBl=1']/datadict["APath"]['d']['RMSCMBl=12']
         datadict["APath"]['bdip'] = np.zeros(len(datadict["APath"]['fohm']))
+        datadict["APath"]["MEKE"] = np.zeros(len(datadict["APath"]['fohm']))
+
         # get field strengths 
         datadict["APath"]['rmsINT']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['Pm'])   * datadict["APath"]['d']['Els'])
         datadict["APath"]['rmsCMB']['Le'] = np.sqrt( (datadict["APath"]['E']/datadict["APath"]['Pm']) ) * datadict["APath"]['d']['rmsCMBtotal']
@@ -1047,6 +1055,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["S"]['Rm']   = datadict["S"]['d']['Rm']
         datadict["S"]['fdip'] = datadict["S"]['d']['fdip1']
         datadict["S"]['bdip'] = np.zeros(len(datadict["S"]['fohm']))
+        datadict["S"]["MEKE"] = datadict["S"]['d']['MEKE']
         
         datadict["S"]['rmsINT']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm'])   * datadict["S"]['d']['Els'])
         datadict["S"]['rmsCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm']) ) * datadict["S"]['d']['rmsCMBtotal']
@@ -1114,6 +1123,8 @@ def plot_bdip(datadict, myfdip):
     del ax
 
 def mergeDict(d1, d2):
+    if (not d1["plot"] and not d2["plot"]):
+        raise ValueError("d1 and d2 are empty dictionaries. Nothing to be merged.")
     if (d1.keys() != d2.keys()):
         print(d1.keys())
         print(d2.keys())
@@ -1125,7 +1136,7 @@ def mergeDict(d1, d2):
         newd["dataset"] = d1["dataset"]+"+"+d2["dataset"]
         newd["nsims"] = d1["nsims"]+d2["nsims"]
         for key in d1:
-            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip"]):
+            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip","MEKE"]):
                 newd[key] = np.concatenate((d1[key], d2[key]))
             if (key in ["rmsINT", "rmsCMB", "dipCMB"]):
                 newd[key]["Le"] = np.concatenate((d1[key]["Le"], d2[key]["Le"]))
@@ -1148,17 +1159,17 @@ def filterLeedsDict(d1, fkey="TBC", condition="==FTFF"):
     if (len(idx)==0):
         print("")
         print("Nothing to filter for "+fkey+condition)
-        d1["plot"] = False
+        d1["plot"] = True
         return d1
     else:
         idx = np.asarray(idx)
         # filter all keys
         for key in d1:
-            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip","TBC","Ir","ar"]):
+            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip","MEKE","TBC","Ir","ar"]):
                 newd[key] = d1[key][idx]
             if (key in ["rmsINT", "rmsCMB", "dipCMB"]):
                 newd[key]["Le"] = d1[key]["Le"][idx]
-        newd["plot"]    = False
+        newd["plot"]    = True
         newd["nsims"]   = len(newd["E"])
         newd["dataset"] = d1["dataset"]
         newd["plotp"]   = d1["plotp"]
@@ -1177,25 +1188,43 @@ def redefineDataDict(indict, quiet=False):
     newdict = {"FTFT":{}, "FTFF":{}, "FF0F":{}, "FFFF":{}, "CE":{}, "Mixed":{}}
     # merge/redefine
     newdict["FTFT"] = mergeDict(indict["S"], indict["Y"])
-    newdict["FF0F"] = copy.deepcopy(indict["UC"])
-    newdict["CE"]   = copy.deepcopy(indict["APath"])
 
-    # filter Leeds simulations
-    dL_Ir0   = filterLeedsDict(indict["L"], fkey="Ir", condition="==0.")
-    dL_FTFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FTFF'")
-    dL_FFFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FFFF'")
-    dL_mixed = filterLeedsDict(indict["L"], fkey="Ir", condition="!=0.")
-   
-    # delete unseful stuff 
-    del dL_FTFF["TBC"], dL_FTFF["Ir"], dL_FTFF["ar"]
-    del dL_FFFF["TBC"], dL_FFFF["Ir"], dL_FFFF["ar"]
-    del dL_mixed["TBC"], dL_mixed["Ir"], dL_mixed["ar"]
+    if indict["UC"]["plot"]:
+        newdict["FF0F"] = copy.deepcopy(indict["UC"])
+    else:
+        raise ValueError("UC dataset is empty. FF0F cannot be created.")
 
-    # merge with other simulations data
-    newdict["FFFF"]  = copy.deepcopy(dL_FFFF)
-    newdict["FTFF"]  = mergeDict(indict["UCt"], dL_FTFF)
-    newdict["Mixed"] = mergeDict(indict["A"], dL_mixed)
-   
+    if indict["APath"]["plot"]:
+        newdict["CE"] = copy.deepcopy(indict["APath"])
+    else:
+        raise ValueError("APath dataset is empty. CE cannot be created.")
+
+    if indict["L"]["plot"]:
+        # filter Leeds simulations
+        dL_Ir0   = filterLeedsDict(indict["L"], fkey="Ir", condition="==0.")
+        dL_FTFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FTFF'")
+        dL_FFFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FFFF'")
+        dL_mixed = filterLeedsDict(indict["L"], fkey="Ir", condition="!=0.")
+       
+        # delete unseful stuff 
+        del dL_FTFF["TBC"], dL_FTFF["Ir"], dL_FTFF["ar"]
+        del dL_FFFF["TBC"], dL_FFFF["Ir"], dL_FFFF["ar"]
+        del dL_mixed["TBC"], dL_mixed["Ir"], dL_mixed["ar"]
+
+        # merge with other simulations data
+        newdict["FFFF"]  = copy.deepcopy(dL_FFFF)
+    else:
+        raise ValueError("Leeds dataset is empty. FFFF cannot be created.")
+    if (not indict["L"]["plot"] and not indict["UCt"]["plot"]):
+        raise ValueError("Leeds/UCt datasets are empty. FTFF cannot be created.")
+    else:
+        newdict["FTFF"]  = mergeDict(indict["UCt"], dL_FTFF)
+
+    if (not indict["A"]["plot"] and not indict["L"]["plot"]):
+        raise ValueError("Leeds/A datasets are empty. Mixed dataset cannot be created.")
+    else:
+        newdict["Mixed"] = mergeDict(indict["A"], dL_mixed)
+
     # redefine "dataset" key
     newdict["FTFT"]["dataset"]  = "FTFT" 
     newdict["FFFF"]["dataset"]  = "FFFF"
@@ -1203,6 +1232,14 @@ def redefineDataDict(indict, quiet=False):
     newdict["FTFF"]["dataset"]  = "FTFF"
     newdict["Mixed"]["dataset"] = "Mixed"
     newdict["CE"]["dataset"]    = "CE"
+
+    # redefine "plot" key
+    newdict["FTFT"]["plot"]  = False
+    newdict["FFFF"]["plot"]  = False
+    newdict["FF0F"]["plot"]  = False
+    newdict["FTFF"]["plot"]  = False
+    newdict["Mixed"]["plot"] = False
+    newdict["CE"]["plot"]    = False   
 
     # fit field strengths of these merged datasets
     print("")
@@ -1215,3 +1252,11 @@ def redefineDataDict(indict, quiet=False):
         newdict[key]['dipCMB']['ssr'], newdict[key]['dipCMB']['m'], newdict[key]['dipCMB']['c'], newdict[key]['dipCMB']['res'] = \
             fits(newdict[key]['p'], newdict[key]['dipCMB']['Le'], newdict[key]['fohm'])
     return newdict
+
+def writefilecheck(indict, outfiletag=None):
+    for key in indict:
+        if indict[key]["plot"]:
+            outf = outfiletag + '.' + indict[key]["dataset"]
+            np.savetxt(outf, np.c_[indict[key]["Rm"],indict[key]["fdip"],indict[key]["MEKE"],
+                                      indict[key]["E"]/indict[key]["Pm"]],
+                       fmt=['%.0f','%.2f','%.2f','%2e'], header="Rm    fdip    ME/KE  E/Pm", delimiter="    ")
