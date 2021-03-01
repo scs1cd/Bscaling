@@ -14,7 +14,7 @@ calc_prefac_err = True # Calculate and plot prefactor error?
 myfdip  = 1 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
-myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
+myEr    = 0 # Use 1 (0) for (not) filtering in specified EM/EK range
 
 if (myEkOPm==1):
     EkOPm_range = [1.e-10,1.e-4] # Range of Ek/Pm to include in the analysis (Ek=\nu/\Omega*D^2 as in Aubert's definition)
@@ -41,14 +41,18 @@ chk    = 0 # Use 1 to print on screen checks of energy (quiet otherwise)
 check_gauss_Led = False
 # -- Plot and analyse bdip?
 plt_bdip = False
+
 # -- Categorise simulations by driving? (plots are by authors otherwise)
 #    Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE
+#    Set all plots to true if categorise = True. 
 categorise = True
-#plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed", "CE"]
-plt_categ  = ["CE"]
+plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed", "CE"]
+# plt_categ  = ["FTFT"]
 # -- write out file of databases for check?
-write_check = False
-outf_check  = './data/Dataset_FILTERED'
+write_check = True
+# -- To compare unfiltered and filtered datasets it is easiest to set all filters above to 0
+#    and change the name here; then set the required filter, change name here and rerun. 
+outf_check  = './data/Dataset_UNFILTERED'
 
 # --------------------------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------------------------
@@ -114,31 +118,31 @@ if (myEr == 1):
 
 # read and filter datasets
 if datadict["L"]["plot"]:
-    df, datadict = b.filter_table(infname=leedsname  ,outfname=leedsname+filetag, dataset="Leeds", fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=leedsname  ,outfname="./data/"+leedsname+filetag, dataset="Leeds", fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 if datadict["Y"]["plot"]:
-    df, datadict = b.filter_table(infname=yadavname  ,outfname=yadavname+filetag, dataset="Yadav", fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=yadavname  ,outfname="./data/"+yadavname+filetag, dataset="Yadav", fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 if datadict["A"]["plot"]:
-    df, datadict = b.filter_table(infname=aubertname ,outfname=aubertname+filetag, dataset="Aubert", fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=aubertname ,outfname="./data/"+aubertname+filetag, dataset="Aubert", fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 if datadict["UC"]["plot"]:
-    df, datadict = b.filter_table(infname=christname ,outfname=christname+filetag, dataset="Christensen", fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=christname ,outfname="./data/"+christname+filetag, dataset="Christensen", fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 if datadict["UCt"]["plot"]:
-    df, datadict = b.filter_table(infname=christnamet,outfname= christnamet+filetag, dataset="ChristensenT", fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=christnamet,outfname= "./data/"+christnamet+filetag, dataset="ChristensenT", fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 if datadict["APath"]["plot"]:
-    df, datadict = b.filter_table(infname=APathname,  outfname=APathname+filetag, dataset="APath",fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=APathname,  outfname="./data/"+APathname+filetag, dataset="APath",fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 if datadict["S"]["plot"]:
-    df, datadict = b.filter_table(infname=Sname    ,  outfname=Sname+filetag    , dataset="S"    ,fdip_range=fdip_range, 
+    df, datadict = b.filter_table(infname=Sname    ,  outfname="./data/"+Sname+filetag    , dataset="S"    ,fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 
@@ -298,7 +302,7 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title(title_str)
-leg = plt.legend(bbox_to_anchor=(0., 1.12), loc=3, ncol=2, borderaxespad=0, 
+leg = plt.legend(bbox_to_anchor=(0.55, 0.01), loc=3, ncol=2, borderaxespad=0, 
                  labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
 for lh in leg.legendHandles:
     lh.set_linewidth(3.)
@@ -361,7 +365,7 @@ if myEr==1:
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
 plt.title(title_str)
-leg = plt.legend(bbox_to_anchor=(0., 1.12), loc=3, ncol=2, borderaxespad=0, 
+leg = plt.legend(bbox_to_anchor=(0.55, 0.01), loc=3, ncol=2, borderaxespad=0, 
                  labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
 for lh in leg.legendHandles:
     lh.set_linewidth(3.)
@@ -441,7 +445,7 @@ elif myfohm ==1:
 ax.set_yscale('log')
 ax.set_xscale('log')
 
-leg = plt.legend(bbox_to_anchor=(0., 1.12), loc=3, ncol=2, borderaxespad=0, 
+leg = plt.legend(bbox_to_anchor=(0.55, 0.01), loc=3, ncol=2, borderaxespad=0, 
                  labelspacing=0.1,handlelength=0.8, columnspacing=0.5)
 for lh in leg.legendHandles:
     lh.set_linewidth(3.)

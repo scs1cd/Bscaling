@@ -1258,5 +1258,5 @@ def writefilecheck(indict, outfiletag=None):
         if indict[key]["plot"]:
             outf = outfiletag + '.' + indict[key]["dataset"]
             np.savetxt(outf, np.c_[indict[key]["Rm"],indict[key]["fdip"],indict[key]["MEKE"],
-                                      indict[key]["E"]/indict[key]["Pm"]],
-                       fmt=['%.0f','%.2f','%.2f','%2e'], header="Rm    fdip    ME/KE  E/Pm", delimiter="    ")
+                                      indict[key]["E"]/indict[key]["Pm"], indict[key]["rmsINT"]['Le'], indict[key]["p"], indict[key]['fohm'] ],
+                       fmt=['%.0f','%.2f','%.2f','%2e','%2e','%2e','%2e'], header="Rm    fdip    ME/KE  E/Pm         LeRMS            p             fohm", delimiter="    ")
