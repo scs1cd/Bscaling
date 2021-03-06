@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import bscaling_functions as b
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -11,10 +12,10 @@ rc('text', usetex=False)
 # ---------------------------------------------------------------------------------------
 
 calc_prefac_err = True # Calculate and plot prefactor error?
-myfdip  = 1 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
+myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
-myEr    = 0 # Use 1 (0) for (not) filtering in specified EM/EK range
+myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
 
 if (myEkOPm==1):
     EkOPm_range = [1.e-10,1.e-4] # Range of Ek/Pm to include in the analysis (Ek=\nu/\Omega*D^2 as in Aubert's definition)
@@ -318,6 +319,9 @@ if (myEr == 1):
     file3 += "_" + EMoEK_tag
 file2 += ".pdf"
 file3 += ".png"
+#Check ./fig directory exists, otherwise create it
+if (not os.path.isdir('./fig')):
+    os.mkdir('./fig')
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
 ###############################################################################################################################

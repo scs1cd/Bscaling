@@ -666,7 +666,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["L"]["E"]  = datadict["L"]["d"]["Ek"]
         datadict["L"]["Pm"] = datadict["L"]["d"]["Pm"]
         datadict["L"]["Rm"] = datadict["L"]["d"]["RmAve"]
-        datadict["L"]["MEKE"] = datadict["L"]["d"]["EkinAve"]/datadict["L"]["d"]["EmagAve"]
+        datadict["L"]["MEKE"] = datadict["L"]["d"]["EmagAve"]/datadict["L"]["d"]["EkinAve"]
         
         # Calculate shell volume
         ar = datadict["L"]["d"]["ar"] # aspect ratio
@@ -743,7 +743,7 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["A"]["MEKE"] = datadict["A"]["d"]["Lo"]**2/datadict["A"]["d"]["Ro"]**2
 
         if myfohm == 1:
-            fohmA = np.ones(len(datadict["A"]["d"]["fohm"]))
+            datadict["A"]["fohm"] = np.ones(len(datadict["A"]["d"]["fohm"]))
         else:
             datadict["A"]["fohm"] = datadict["A"]["d"]["fohm"]
         
@@ -993,8 +993,10 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["APath"]['nsims'] = nsims 
         datadict["APath"]["d"] = new_df.to_dict("list")
         datadict["APath"]["d"] = convertDictKeys(datadict["APath"]["d"])
-        
-        datadict["APath"]['fohm'] = datadict["APath"]['d']['fohm']
+        if myfohm == 1:
+            datadict["APath"]['fohm'] = np.ones(len(datadict["APath"]['d']['E']))
+        else:
+            datadict["APath"]['fohm'] = datadict["APath"]['d']['fohm']
         datadict["APath"]['p']    = datadict["APath"]['d']['p']
         datadict["APath"]['E']    = datadict["APath"]['d']['E']
         datadict["APath"]['Pm']   = datadict["APath"]['d']['Pm']
@@ -1047,8 +1049,10 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
         datadict["S"]['nsims'] = nsims 
         datadict["S"]["d"] = new_df.to_dict("list")
         datadict["S"]["d"] = convertDictKeys(datadict["S"]["d"])
-        
-        datadict["S"]['fohm'] = datadict["S"]['d']['fohm']
+        if myfohm == 1:
+            datadict["S"]['fohm'] = np.ones(len(datadict["S"]['d']['E']))
+        else:       
+            datadict["S"]['fohm'] = datadict["S"]['d']['fohm']
         datadict["S"]['p']    = datadict["S"]['d']['p']
         datadict["S"]['E']    = datadict["S"]['d']['E']
         datadict["S"]['Pm']   = datadict["S"]['d']['Pm']
