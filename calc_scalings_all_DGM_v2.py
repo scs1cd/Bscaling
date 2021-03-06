@@ -158,6 +158,8 @@ if categorise:
     if ("CE" in plt_categ)   : datadict["CE"]["plot"] = True
 
 if write_check:
+    if (not os.path.isdir('./data')):
+        os.mkdir('./data')
     # write filtered datasets in output file:
     b.writefilecheck(datadict, outfiletag=outf_check)
 
