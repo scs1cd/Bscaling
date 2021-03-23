@@ -12,7 +12,7 @@ rc('text', usetex=False)
 # ---------------------------------------------------------------------------------------
 
 calc_prefac_err = True # Calculate and plot prefactor error?
-myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
+myfdip  = 2 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
 myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
@@ -22,7 +22,7 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2.,1.e+19]
+    EMoEK_range = [5.,1.e+19]
 else:
     EMoEK_range = None
     
@@ -48,7 +48,7 @@ plt_bdip = False
 #    Set all plots to true if categorise = True. 
 categorise = True
 plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed", "CE"]
-# plt_categ  = ["FTFT"]
+#plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed"]
 # -- write out file of databases for check?
 write_check = True
 # -- To compare unfiltered and filtered datasets it is easiest to set all filters above to 0
