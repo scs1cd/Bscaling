@@ -12,7 +12,7 @@ rc('text', usetex=False)
 # ---------------------------------------------------------------------------------------
 
 calc_prefac_err = True # Calculate and plot prefactor error?
-myfdip  = 2 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
+myfdip  = 0 # Use 0 for all fdip values, 1 for fdip > 0.50, 2 for filtering with fdip=(0.35,0.80), 3 for fdip=(0.40,0.80) (see below).
 myfohm  = 0 # Use 0 for fohm factor, or 1 for NO fohm factor
 myEkOPm = 0 # Use 1 (0) for (not) filtering in a specified range of Ek/Pm values
 myEr    = 1 # Use 1 (0) for (not) filtering in specified EM/EK range
@@ -22,7 +22,7 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [5.,1.e+19]
+    EMoEK_range = [2.,1.e+19]
 else:
     EMoEK_range = None
     
@@ -41,7 +41,7 @@ chk    = 0 # Use 1 to print on screen checks of energy (quiet otherwise)
 #    calculated from mag_cmb-files and Gauss coeffs-files.
 check_gauss_Led = False
 # -- Plot and analyse bdip?
-plt_bdip = False
+plt_bdip = True
 
 # -- Categorise simulations by driving? (plots are by authors otherwise)
 #    Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE
@@ -224,10 +224,6 @@ if calc_prefac_err:
 Cmax = np.log10(1000.0)#np.log10(np.max(Eall))
 Cmin = np.log10(50.0)#np.log10(np.min(Eall))
 datadict = b.getPlotProperties(datadict, categorise=categorise)
-
-# - Plot bdip stuff
-if plt_bdip:
-    b.plot_bdip(datadict, myfdip)
 
 # --- Store fitted values in output files
 b.saveFitValues(filename=outfpath+outfname, datadict=datadict, alldatadict=alldatadict)
@@ -561,3 +557,7 @@ file2 += ".pdf"
 file3 += ".png"
 plt.savefig(file2, format='pdf',bbox_inches="tight")
 plt.savefig(file3, format='png',bbox_inches="tight")
+
+# - Plot bdip stuff
+if plt_bdip:
+    b.plot_bdip(datadict, title_str)

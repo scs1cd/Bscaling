@@ -997,12 +997,11 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["APath"]['fohm'] = np.ones(len(datadict["APath"]['d']['E']))
         else:
             datadict["APath"]['fohm'] = datadict["APath"]['d']['fohm']
+
         datadict["APath"]['p']    = datadict["APath"]['d']['p']
         datadict["APath"]['E']    = datadict["APath"]['d']['E']
         datadict["APath"]['Pm']   = datadict["APath"]['d']['Pm']
         datadict["APath"]['Rm']   = datadict["APath"]['d']['Rm']
-        datadict["APath"]['fdip'] = datadict["APath"]['d']['RMSCMBl=1']/datadict["APath"]['d']['RMSCMBl=12']
-        datadict["APath"]['bdip'] = np.zeros(len(datadict["APath"]['fohm']))
         datadict["APath"]["MEKE"] = np.zeros(len(datadict["APath"]['fohm']))
 
         # get field strengths 
@@ -1017,6 +1016,10 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
                 fits(datadict["APath"]['p'], datadict["APath"]['rmsCMB']['Le'], datadict["APath"]['fohm'])
             datadict["APath"]['dipCMB']['ssr'], datadict["APath"]['dipCMB']['m'], datadict["APath"]['dipCMB']['c'], datadict["APath"]['dipCMB']['res'] = \
                 fits(datadict["APath"]['p'], datadict["APath"]['dipCMB']['Le'], datadict["APath"]['fohm'])
+
+
+        datadict["APath"]['fdip'] = datadict["APath"]['d']['RMSCMBl=1']/datadict["APath"]['d']['RMSCMBl=12']
+        datadict["APath"]['bdip'] = datadict["APath"]['rmsINT']['Le']  /datadict["APath"]['dipCMB']['Le']
 
     # -------------------------
     # Schwaiger 2019
@@ -1053,17 +1056,19 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
             datadict["S"]['fohm'] = np.ones(len(datadict["S"]['d']['E']))
         else:       
             datadict["S"]['fohm'] = datadict["S"]['d']['fohm']
+
         datadict["S"]['p']    = datadict["S"]['d']['p']
         datadict["S"]['E']    = datadict["S"]['d']['E']
         datadict["S"]['Pm']   = datadict["S"]['d']['Pm']
         datadict["S"]['Rm']   = datadict["S"]['d']['Rm']
         datadict["S"]['fdip'] = datadict["S"]['d']['fdip1']
-        datadict["S"]['bdip'] = np.zeros(len(datadict["S"]['fohm']))
-        datadict["S"]["MEKE"] = datadict["S"]['d']['MEKE']
-        
+
         datadict["S"]['rmsINT']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm'])   * datadict["S"]['d']['Els'])
         datadict["S"]['rmsCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm']) ) * datadict["S"]['d']['rmsCMBtotal']
         datadict["S"]['dipCMB']['Le'] = np.sqrt( (datadict["S"]['E']/datadict["S"]['Pm']) ) * datadict["S"]['d']['RMSCMBl=1']
+        datadict["S"]['bdip'] = datadict["S"]['rmsINT']['Le'] / datadict["S"]['dipCMB']['Le']
+        datadict["S"]["MEKE"] = datadict["S"]['d']['MEKE']
+        
 
         if not categorise:
             # fits
@@ -1099,31 +1104,41 @@ def plot_bdip(datadict, myfdip):
     Cmin = np.log10(50.0)#np.log10(np.min(Eall))
     
     # - bdip vs buoyancy power
-    fig = plt.figure(figsize=(8,6))
-    ax = fig.add_subplot(111)
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8,12))
+    #ax = fig.add_subplot(111)
+    #ax = fig.add_subplot(111)    
     for key in datadict:
+        print(key)
         if datadict[key]["plot"]:
-            plt.scatter(datadict[key]["p"], datadict[key]["bdip"],
+            ax.scatter(datadict[key]["p"], datadict[key]["bdip"],
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
-                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], label=datadict[key]["plotp"]["label"]) 
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
+                        label=datadict[key]["plotp"]["label"]) 
+            ax2.scatter(datadict[key]["p"], 1/(datadict[key]["bdip"]*datadict[key]["fdip"]),
+                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
+                        label=datadict[key]["plotp"]["label"]) 
     ax.set_xlabel('$P_A$')
-    ax.set_ylabel('$b_{dip}$')
-    plt.xlim([1.e-10,1.e-3]); plt.ylim([1.e+0,50.])
-    plt.xscale("log"); plt.yscale("log")
-    if myfdip == 0:
-        plt.title("All models")
-    elif myfdip == 1: 
-        plt.title("$f_{dip}>0.5$")
-    elif myfdip == 2:
+    ax.set_ylabel('$b_{dip} = Le_{rms}^{int}/Le_{l=1}^{cmb}$')
+    ax.set_xlim([1.e-10,1.e-3]) ; ax.set_ylim([1.e+0,50.])
+    ax.set_xscale("log")        ; ax.set_yscale("log")
+    ax2.set_xlabel('$P_A$')
+    ax2.set_ylabel('$Le_{l=12}^{cmb} / Le_{rms}^int$')
+    #ax2.set_xlim([1.e-10,1.e-3]); ax2.set_ylim([1.e+0,50.])
+    ax2.set_xscale("log")       #; ax2.set_yscale("log")
+    #if myfdip == 0:
+    fig.suptitle(myfdip)
+    #elif myfdip == 1: 
+    #    plt.title("$f_{dip}>0.5$")
+    #elif myfdip == 2:
         #plt.title("$%.2f\leq f_{dip}\leq %.2f$" %(fdip_min,fdip_max))
-        plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
-    elif myfdip == 3:
-        plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
+    #    plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
+    #elif myfdip == 3:
+    #    plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
 
-    plt.show(block=False)
-    plt.tight_layout()
-    plt.savefig('./fig/bdip_vs_P_fdip='+str(myfdip)+'.pdf',format='pdf')
+    fig.savefig('./fig/bdip_vs_P.pdf',format='pdf')
     del ax
 
 def mergeDict(d1, d2):
