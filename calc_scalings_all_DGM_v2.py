@@ -25,7 +25,8 @@ if (myEr==1):
     EMoEK_range = [2.,1.e+19]
 else:
     EMoEK_range = None
-    
+# choose the internal colour of symbols ("Re","Rm","bdip")
+colorby = "bdip"
 # -- List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
 #    IMA (or Energy below) corresponds to QG-MAC in the new notation.
 plt_extrap_scalings = ["IMA", "MAC"]
@@ -221,9 +222,18 @@ if calc_prefac_err:
                                                                      alldatadict["dipCMB"]["c_sd"], alldatadict["dipCMB"]["m"])
 
 # - Define symbols' properties for plotting
-Cmax = np.log10(1000.0)#np.log10(np.max(Eall))
-Cmin = np.log10(50.0)#np.log10(np.min(Eall))
-datadict = b.getPlotProperties(datadict, categorise=categorise)
+if (colorby == "Re" or colorby == "Rm"):
+    Cmax = np.log10(1000.0)
+    Cmin = np.log10(50.0)
+elif (colorby == "bdip"):
+    bdip_min = []; bdip_max = []
+    for key in datadict:
+        if datadict[key]["plot"]:
+            bdip_min.append(np.min(np.array(datadict[key]["bdip"])))
+            bdip_max.append(np.max(np.array(datadict[key]["bdip"])))
+    Cmax = np.max(bdip_max)
+    Cmin = np.min(bdip_min)
+datadict = b.getPlotProperties(datadict, categorise=categorise, colorby=colorby)
 
 # --- Store fitted values in output files
 b.saveFitValues(filename=outfpath+outfname, datadict=datadict, alldatadict=alldatadict)
@@ -259,7 +269,7 @@ plt.clf()
 plt.rcParams["figure.figsize"] = [16,6]
 ax = plt.gca()
 ax, dd_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsINT",
-                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[3e-5,0.2])
+                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[3e-5,0.2], colorby=colorby)
 plt.loglog(Pfit, fitall, color="k", lw=lw_fit, zorder=2)
 if (calc_prefac_err):
     plt.fill_between(Pfit, fitall_2sdm, fitall_2sdp, color="k", alpha=0.1, zorder=-1)
@@ -339,7 +349,7 @@ plt.clf()
 plt.rcParams["figure.figsize"] = [16,6]
 ax = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict, field="rmsCMB",
-                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2])
+                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2], colorby=colorby)
 plt.loglog(Pfit ,fitrmscmb, color="k", lw=lw_fit)
 if (calc_prefac_err):
     plt.fill_between(Pfit, fitrmscmb_2sdm, fitrmscmb_2sdp, color="k", alpha=0.1, zorder=-1)
@@ -409,7 +419,7 @@ plt.rcParams["figure.figsize"] = [16,6]
 ax = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=earthdict,
                                                  field="dipCMB",
-                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2])
+                                                 cbarrange=[Cmin,Cmax], xrange=[xmin,xmax], yrange=[5e-6,0.2], colorby=colorby)
 plt.loglog(Pfit, fitdipcmb, color="k", lw=lw_fit)
 if (calc_prefac_err):
     plt.fill_between(Pfit, fitdipcmb_2sdm, fitdipcmb_2sdp, color="k", alpha=0.1, zorder=-1)
@@ -482,7 +492,8 @@ plt.figure(figsize=(16,15))
 plt.subplot(3,1,1)
 ax = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=None, field="rmsINT",
-                                                 colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2])
+                                                 colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2],
+                                                 colorby=colorby)
 plt.loglog(Pfit , fitall, color="black")
 plt.loglog(5e-12 , 2e-4, marker="s", markersize=30)
 if (calc_prefac_err):
@@ -513,7 +524,8 @@ del ax
 plt.subplot(3,1,2)
 ax  = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=None, field="rmsCMB",
-                                                 colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2])
+                                                 colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2],
+                                                 colorby=colorby)
 plt.loglog(Pfit,fitrmscmb,color="black")
 plt.loglog(5e-12 , 2e-4, marker="s", markersize=30)
 if (calc_prefac_err):
@@ -531,7 +543,8 @@ del ax
 plt.subplot(3,1,3)
 ax = plt.gca()
 ax, legend_xpos, legend_ypos = b.plotSimulations(ax, datadict=datadict, alldatadict=alldatadict, earthdict=None, field="dipCMB",
-                                                 colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2])
+                                                 colorbar=True, cbarrange=[Cmin,Cmax], xrange=[1e-10,1e-3], yrange=[1e-4,0.2],
+                                                 colorby=colorby)
 plt.loglog(Pfit,fitdipcmb,color="black")
 if (calc_prefac_err):
     plt.loglog(Pfit,fitdipcmb_1sdp,c='k',ls=':',lw=1.)

@@ -110,12 +110,19 @@ def getEarthEstimates(quiet=True):
 
     return Le_earth_dipmin, Le_earth_dipmax, Le_earth_rmsmin, Le_earth_rmsmax, Le_earth_rmscmbmin, Le_earth_rmscmbmax, P_earth_min, P_earth_max
   
-def getPlotProperties(datadict, categorise=False):
+def getPlotProperties(datadict, categorise=False, colorby="Re"):
 
     if categorise:
         for key in datadict:
             if datadict[key]["plot"]:
-                datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
+                if (colorby=="Re"):
+                    datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
+                elif (colorby=="Rm"):
+                    datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])
+                elif (colorby=="bdip"):
+                    datadict[key]["plotp"]["Col"] = np.array(datadict[key]["bdip"])
+                else:
+                    raise ValueError("Not valid 'colorby' value")
                 if (datadict[key]["dataset"]=="Mixed"):
                     datadict[key]["plotp"]["marker"] = "*"
                     datadict[key]["plotp"]["size"] = 150
@@ -157,7 +164,15 @@ def getPlotProperties(datadict, categorise=False):
     else:
         for key in datadict:
             if datadict[key]["plot"]:
-                datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
+                if (colorby=="Re"):
+                    datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
+                elif (colorby=="Rm"):
+                    datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])
+                elif (colorby=="bdip"):
+                    datadict[key]["plotp"]["Col"] = np.array(datadict[key]["bdip"])
+                else:
+                    raise ValueError("Not valid 'colorby' value")
+
                 if (datadict[key]["dataset"]=="L"):
                     datadict[key]["plotp"]["marker"] = "*"
                     datadict[key]["plotp"]["size"] = 150
@@ -206,7 +221,7 @@ def getPlotProperties(datadict, categorise=False):
     return datadict
 
 def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="rmsINT",
-                    xrange=[0.,1.], yrange=[0.,1.], colorbar=True, cbarrange=[0.,1.]):
+                    xrange=[0.,1.], yrange=[0.,1.], colorbar=True, cbarrange=[0.,1.], colorby="Re"):
 
     if field not in ("rmsINT","rmsCMB","dipCMB"):
         raise ValueError("Not valid field provided.")
@@ -226,9 +241,13 @@ def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="
                                linewidth=1, color='black', fill=True))
     for key in datadict:
         if datadict[key]["plot"]:
+            if colorby in ("Re","Rm"):
+                symfacecol = np.log10(datadict[key]["plotp"]["Col"])
+            elif (colorby == "bdip"):
+                symfacecol = datadict[key]["plotp"]["Col"]
             plt.scatter(datadict[key]["p"], datadict[key][field]["Le"]/datadict[key]["fohm"]**0.5,
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
-                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=cbarmin, vmax=cbarmax,
+                        c=symfacecol, vmin=cbarmin, vmax=cbarmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
                         label=datadict[key]["plotp"]["label"])
     
@@ -258,7 +277,13 @@ def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="
     if colorbar:
         # Plot color bar
         cbar = plt.colorbar()
-        cbar.set_label("log $Re$")
+        if (colorby == "Re"):
+            str_cbar = "log $Re$"
+        elif (colorby == "Rm"):
+            str_cbar = "log $Rm$"
+        elif (colorby == "bdip"):
+            str_cbar = "$b_{dip}$" 
+        cbar.set_label(str_cbar)
     
     ax.set_yscale('log')
     ax.set_xscale('log')
@@ -1100,8 +1125,8 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
 
 def plot_bdip(datadict, myfdip):
 
-    Cmax = np.log10(1000.0)#np.log10(np.max(Eall))
-    Cmin = np.log10(50.0)#np.log10(np.min(Eall))
+    Cmax = np.log10(1000.0)
+    Cmin = np.log10(50.0)
     
     # - bdip vs buoyancy power
     fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8,12))
