@@ -22,11 +22,11 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2.,1.e+19]
+    EMoEK_range = [2.0 ,1.e+19]
 else:
     EMoEK_range = None
-# choose the internal colour of symbols ("Re","Rm","bdip")
-colorby = "bdip"
+# choose the internal colour of symbols ("Re","Rm","bdip", "log Rm", "log Re")
+colorby = "Rm"
 # -- List of scalings to be plotted in extrap figs ("IMA","MAC","IMAC","IMACd","IMACi")
 #    IMA (or Energy below) corresponds to QG-MAC in the new notation.
 plt_extrap_scalings = ["IMA", "MAC"]
@@ -89,10 +89,10 @@ elif myfdip == 1:
     fdip_range = [0.50,1.1]
 elif myfdip == 2:
     fdipn = "2"
-    fdip_range = [0.35,0.80]
+    fdip_range = [0.35,0.75]
 elif myfdip == 3:
     fdipn = "3"
-    fdip_range = [0.40,0.80]
+    fdip_range = [0.40,0.75]
 else:
     raise ValueError("Not valid value of myfdip provided.")
 filetag = "_fdip"+fdipn
@@ -147,6 +147,10 @@ if datadict["S"]["plot"]:
     df, datadict = b.filter_table(infname=Sname    ,  outfname="./data/"+Sname+filetag    , dataset="S"    ,fdip_range=fdip_range, 
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
+
+print('TOTAL NUMBER OF MODELS = ', len(datadict['S']['rmsINT']['Le'])+len(datadict['APath']['rmsINT']['Le'])+
+      len(datadict['UCt']['rmsINT']['Le'])+len(datadict['UC']['rmsINT']['Le'])+len(datadict['A']['rmsINT']['Le'])+
+      len(datadict['Y']['rmsINT']['Le'])+len(datadict['L']['rmsINT']['Le']))
 
 # Categorise simulations by driving and select which to plot
 if categorise:
@@ -223,8 +227,11 @@ if calc_prefac_err:
 
 # - Define symbols' properties for plotting
 if (colorby == "Re" or colorby == "Rm"):
+    Cmax = 1000.0
+    Cmin = 100.0
+elif (colorby == "log Re" or colorby == "log Rm"):
     Cmax = np.log10(1000.0)
-    Cmin = np.log10(50.0)
+    Cmin = np.log10(100.0)
 elif (colorby == "bdip"):
     bdip_min = []; bdip_max = []
     for key in datadict:
@@ -509,7 +516,7 @@ if myEr==1:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[EMoEK_range[0],EMoEK_range[1]])
 else:
     title_str = b.getPlotTitle(myfdip=myfdip, myEr=myEr, Er_range=[None]*2)
-plt.title("Field strength vs Buoyant power for "+title_str)
+plt.title("Field strength vs Buoyant power: "+title_str)
 leg = plt.legend(bbox_to_anchor=(0.8, 0.05), loc=3, borderaxespad=0)
 for lh in leg.legendHandles:
     lh.set_linewidth(3.)

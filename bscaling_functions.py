@@ -115,9 +115,9 @@ def getPlotProperties(datadict, categorise=False, colorby="Re"):
     if categorise:
         for key in datadict:
             if datadict[key]["plot"]:
-                if (colorby=="Re"):
+                if (colorby=="Re" or colorby=="log Re"):
                     datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])/np.array(datadict[key]["Pm"])
-                elif (colorby=="Rm"):
+                elif (colorby=="Rm" or colorby=="log Rm"):
                     datadict[key]["plotp"]["Col"] = np.array(datadict[key]["Rm"])
                 elif (colorby=="bdip"):
                     datadict[key]["plotp"]["Col"] = np.array(datadict[key]["bdip"])
@@ -242,6 +242,8 @@ def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="
     for key in datadict:
         if datadict[key]["plot"]:
             if colorby in ("Re","Rm"):
+                symfacecol = datadict[key]["plotp"]["Col"]
+            elif colorby in ("log Re","log Rm"):
                 symfacecol = np.log10(datadict[key]["plotp"]["Col"])
             elif (colorby == "bdip"):
                 symfacecol = datadict[key]["plotp"]["Col"]
@@ -278,8 +280,12 @@ def plotSimulations(ax, datadict=None, alldatadict=None, earthdict=None, field="
         # Plot color bar
         cbar = plt.colorbar()
         if (colorby == "Re"):
-            str_cbar = "log $Re$"
+            str_cbar = "$Re$"
         elif (colorby == "Rm"):
+            str_cbar = "$Rm$"
+        elif (colorby == "log Re"):
+            str_cbar = "log $Re$"
+        elif (colorby == "log Rm"):
             str_cbar = "log $Rm$"
         elif (colorby == "bdip"):
             str_cbar = "$b_{dip}$" 
@@ -297,17 +303,23 @@ def getPlotTitle(myfdip=None, fdip_range= [None]*2, myEr=None, Er_range=[None]*2
         title_str = "$f_{dip}>0.5$"
         comma = True
     elif (myfdip == 2):
-        title_str = "$0.35< f_{dip}<0.80$"
+        title_str = "$0.35< f_{dip}<0.75$"
+        comma = True        
     elif (myfdip == 3):
-        title_str = "$0.40< f_{dip}<0.80$"
+        title_str = "$0.40< f_{dip}<0.75$"
         comma = True        
 
+    # Don't print Em/Ek if its set deliberately large
     if (myEr == 1):
-        if comma:
-            title_str += ", "+ "EM/EK $\geq %.1f$" %(Er_range[0])
-        else:
-            title_str += "EM/EK $\geq %.1f$" %(Er_range[0])
-            comma = True
+        if (Er_range[0]) > 0.5: 
+            if comma:
+                title_str += ", "+ " $E_M/E_K$ $\geq %.1f$" %(Er_range[0])
+            else:
+                title_str += " $E_M/E_K$ $\geq %.1f$" %(Er_range[0])
+                comma = True
+                
+    if (myfdip == 0) and (Er_range[0] < 1.0):
+        title_str = "All Simulations"
 
     return title_str
 
@@ -1126,45 +1138,47 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
 def plot_bdip(datadict, myfdip):
 
     Cmax = np.log10(1000.0)
-    Cmin = np.log10(50.0)
+    Cmin = np.log10(100.0)
+    
+    xmin = 1e-14
+    xmax = 1e-3
+    P    = np.linspace(xmin, xmax, 10)
+    bd_max = 4.0
+    bd_min = 2.5
+    bdE_max = (bd_max/0.25) * np.ones(len(P))
+    bdE_min = (bd_min/0.25) * np.ones(len(P))
     
     # - bdip vs buoyancy power
-    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8,12))
-    #ax = fig.add_subplot(111)
-    #ax = fig.add_subplot(111)    
+    plt.subplots(figsize=(16,6))
     for key in datadict:
-        print(key)
         if datadict[key]["plot"]:
-            ax.scatter(datadict[key]["p"], datadict[key]["bdip"],
+            plt.scatter(datadict[key]["p"], datadict[key]["bdip"],
                         s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
                         c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
                         cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
                         label=datadict[key]["plotp"]["label"]) 
-            ax2.scatter(datadict[key]["p"], 1/(datadict[key]["bdip"]*datadict[key]["fdip"]),
-                        s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
-                        c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
-                        cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
-                        label=datadict[key]["plotp"]["label"]) 
-    ax.set_xlabel('$P_A$')
-    ax.set_ylabel('$b_{dip} = Le_{rms}^{int}/Le_{l=1}^{cmb}$')
-    ax.set_xlim([1.e-10,1.e-3]) ; ax.set_ylim([1.e+0,50.])
-    ax.set_xscale("log")        ; ax.set_yscale("log")
-    ax2.set_xlabel('$P_A$')
-    ax2.set_ylabel('$Le_{l=12}^{cmb} / Le_{rms}^int$')
+            #plt.scatter(datadict[key]["p"], 1/(datadict[key]["bdip"]*datadict[key]["fdip"]),
+            #            s=datadict[key]["plotp"]["size"], marker=datadict[key]["plotp"]["marker"],
+            #            c=np.log10(datadict[key]["plotp"]["Col"]), vmin=Cmin, vmax=Cmax,
+            #            cmap=plt.get_cmap(datadict[key]["plotp"]["cmap"]), edgecolor=datadict[key]["plotp"]["edgecolor"], 
+             #           label=datadict[key]["plotp"]["label"]) 
+   
+    plt.plot(P, bdE_min, ls=":", color="black")
+    plt.plot(P, bdE_max, ls=":", color="black")
+    plt.xlabel('$P_A$')
+    plt.ylabel('$b_{dip} = Le_{rms}^{int}/Le_{l=1}^{cmb}$')
+    plt.xlim([1.e-10,1.e-3]) ; plt.ylim([1.e+0,50.])
+    plt.xscale("log")        ; plt.yscale("log")
+    plt.title(myfdip)
+    plt.colorbar(label="log $Rm$")
+    plt.savefig('./fig/bdip_vs_P.pdf',format='pdf')
+    
+        #ax2.set_xlabel('$P_A$')
+    #ax2.set_ylabel('$Le_{l=12}^{cmb} / Le_{rms}^{int}$')
     #ax2.set_xlim([1.e-10,1.e-3]); ax2.set_ylim([1.e+0,50.])
-    ax2.set_xscale("log")       #; ax2.set_yscale("log")
-    #if myfdip == 0:
-    fig.suptitle(myfdip)
-    #elif myfdip == 1: 
-    #    plt.title("$f_{dip}>0.5$")
-    #elif myfdip == 2:
-        #plt.title("$%.2f\leq f_{dip}\leq %.2f$" %(fdip_min,fdip_max))
-    #    plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
-    #elif myfdip == 3:
-    #    plt.title("$%.2f< f_{dip}< %.2f$" %(fdip_min,fdip_max))
-
-    fig.savefig('./fig/bdip_vs_P.pdf',format='pdf')
-    del ax
+    #ax2.set_xscale("log")       #; ax2.set_yscale("log")
+    
+    #del ax
 
 def mergeDict(d1, d2):
     if (not d1["plot"] and not d2["plot"]):
