@@ -45,8 +45,9 @@ check_gauss_Led = False
 plt_bdip = True
 
 # -- Categorise simulations by driving? (plots are by authors otherwise)
-#    Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE
-#    Set all plots to true if categorise = True. 
+#    Categories are: FTFT, FFFF, FF0F, FTFF, Mixed, CE.
+#    If you want to use this, set all "plot" keywords of the
+#    dictionary "datadict" below to True.
 categorise = True
 plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed", "CE"]
 #plt_categ  = ["FTFT", "FF0F", "FTFF", "Mixed"]
@@ -148,13 +149,10 @@ if datadict["S"]["plot"]:
                                   EkOPm_range=EkOPm_range, EMoEK_range=EMoEK_range, datadict=datadict,
                                   categorise=categorise, chk=chk, myfohm=myfohm)
 
-print('TOTAL NUMBER OF MODELS = ', len(datadict['S']['rmsINT']['Le'])+len(datadict['APath']['rmsINT']['Le'])+
-      len(datadict['UCt']['rmsINT']['Le'])+len(datadict['UC']['rmsINT']['Le'])+len(datadict['A']['rmsINT']['Le'])+
-      len(datadict['Y']['rmsINT']['Le'])+len(datadict['L']['rmsINT']['Le']))
 
 # Categorise simulations by driving and select which to plot
 if categorise:
-    datadict = b.redefineDataDict(datadict, quiet=True)
+    datadict = b.redefineDataDict(datadict, quiet=False, check=True)
     if ("FTFT" in plt_categ) : datadict["FTFT"]["plot"] = True 
     if ("FFFF" in plt_categ) : datadict["FFFF"]["plot"] = True 
     if ("FF0F" in plt_categ) : datadict["FF0F"]["plot"] = True 
@@ -162,14 +160,12 @@ if categorise:
     if ("Mixed" in plt_categ): datadict["Mixed"]["plot"] = True 
     if ("CE" in plt_categ)   : datadict["CE"]["plot"] = True
 
+# check by saving out filtered datasets
 if write_check:
     if (not os.path.isdir('./data')):
         os.mkdir('./data')
     # write filtered datasets in output file:
     b.writefilecheck(datadict, outfiletag=outf_check)
-
-# check by saving out filtered datasets
-# ----------
 
 # get output file name of fitted slopes and pre-factors
 outfpath = "./"
@@ -187,6 +183,7 @@ outfnamepf += ".txt"
 
 # Construct datasets of all simulations
 alldatadict = b.combineDataDict(datadict, quiet=False)
+print('\nTOTAL NUMBER OF MODELS = ', len(alldatadict["E"]))
 
 # Fit all data
 alldatadict["rmsINT"]["ssr"], alldatadict["rmsINT"]["m"], alldatadict["rmsINT"]["c"], alldatadict["rmsINT"]["res"] = \

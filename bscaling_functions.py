@@ -318,7 +318,7 @@ def getPlotTitle(myfdip=None, fdip_range= [None]*2, myEr=None, Er_range=[None]*2
                 title_str += " $E_M/E_K$ $\geq %.1f$" %(Er_range[0])
                 comma = True
                 
-    if (myfdip == 0) and (Er_range[0] < 1.0):
+    if (myfdip == 0) and (Er_range[0] is None):
         title_str = "All Simulations"
 
     return title_str
@@ -340,7 +340,8 @@ def fits(P, Le, fohm):
         ssr = [0.]
         res = 0.
     else:
-        raise ValueError("Only 1 data point. No fit is possible.")
+        print("\nOnly 1 data point. No fit possible. Setting all fit properties to 0.")
+        ssr = [0.]; m = 0.; c = 0.; res = 0.
 
     return ssr[0], m, c, res
 
@@ -727,10 +728,14 @@ def filter_table(infname=None, outfname=None, dataset="Leeds", fdip_range=None, 
 
         if categorise:
             # store temp BCs and other useful properties for the categorisation of models
-            datadict["L"]["TBC"] = datadict["L"]["d"]["TBC"]
-            datadict["L"]["Ir"] = datadict["L"]["d"]["Ir"]
-            datadict["L"]["ar"] = datadict["L"]["d"]["ar"]
-        
+            datadict["L"]["TBC"]     = datadict["L"]["d"]["TBC"]
+            datadict["L"]["Ir"]      = datadict["L"]["d"]["Ir"]
+            datadict["L"]["ar"]      = datadict["L"]["d"]["ar"]
+            datadict["L"]["OHFtype"] = datadict["L"]["d"]["OHFtype"] # outer boundary heat flux type (None,"recumbent Y20" or "tomographic")
+            datadict["L"]["HM"]      = datadict["L"]["d"]["HM"] # heating mode
+            datadict["L"]["id"]      = datadict["L"]["d"]["id"] # model id
+            datadict["L"]["eps"]     = datadict["L"]["d"]["eps"] # outer boundary heat flux amplitude
+            datadict["L"]["Ra"]      = datadict["L"]["d"]["Ra"] # Rayleigh no
         if not categorise:
             # make fit
             datadict["L"]["rmsINT"]["ssr"], datadict["L"]["rmsINT"]["m"], datadict["L"]["rmsINT"]["c"], datadict["L"]["rmsINT"]["res"] = \
@@ -1186,7 +1191,7 @@ def mergeDict(d1, d2):
     if (d1.keys() != d2.keys()):
         print(d1.keys())
         print(d2.keys())
-        raise ValueError("d1 and d2 do not have the same keys.")
+        raise ValueError("d1 and d2 do not have the same keys (see above).")
     
     if (d1["plot"] and d2["plot"]):
         newd = {"rmsINT":{}, "rmsCMB":{}, "dipCMB":{}, "plotp":{}}
@@ -1205,7 +1210,7 @@ def mergeDict(d1, d2):
     
     return newd
 
-def filterLeedsDict(d1, fkey="TBC", condition="==FTFF"):
+def filterLeedsDict(d1, fkey="TBC", condition=" =='FTFF'"):
     newd = {"rmsINT":{}, "rmsCMB":{}, "dipCMB":{}}
     # find array elements to filter
     idx = []
@@ -1223,7 +1228,7 @@ def filterLeedsDict(d1, fkey="TBC", condition="==FTFF"):
         idx = np.asarray(idx)
         # filter all keys
         for key in d1:
-            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip","MEKE","TBC","Ir","ar"]):
+            if (key in ["E","Pm","Rm","fohm","p","bdip","fdip","MEKE","HM","OHFtype","TBC","Ir","ar","id","eps","Ra"]):
                 newd[key] = d1[key][idx]
             if (key in ["rmsINT", "rmsCMB", "dipCMB"]):
                 newd[key]["Le"] = d1[key]["Le"][idx]
@@ -1233,10 +1238,13 @@ def filterLeedsDict(d1, fkey="TBC", condition="==FTFF"):
         newd["plotp"]   = d1["plotp"]
         return newd
 
-def redefineDataDict(indict, quiet=False):
+def redefineDataDict(indict, quiet=False, check=False):
     """
     redefines data dictionaries by author to different
-    categorisations.
+    groupings (FTFT, FTFF, FFFF, FF0F, CE, Mixed).
+    indict : dictionary of simulations by author
+    quiet  : if False, prints information on screen
+    check  : if True, saves out some files as checks
     """
     # clean up author's dictionaries from not useful keys
     for k in indict.keys():
@@ -1244,42 +1252,122 @@ def redefineDataDict(indict, quiet=False):
 
     # define new dictionary
     newdict = {"FTFT":{}, "FTFF":{}, "FF0F":{}, "FFFF":{}, "CE":{}, "Mixed":{}}
-    # merge/redefine
-    newdict["FTFT"] = mergeDict(indict["S"], indict["Y"])
 
+    if (indict["S"]["plot"] and indict["Y"]["plot"]):
+        # FTFT used by Schwaiger and Yadav (S and Y datasets)
+        newdict["FTFT"] = mergeDict(indict["S"], indict["Y"])
+        if check:
+            filepath = "./data/"
+            writegroupingcheck(indict["S"], outfile=filepath+"Dataset.S")
+            writegroupingcheck(indict["Y"], outfile=filepath+"Dataset.Y")
+            writegroupingcheck(newdict["FTFT"], outfile=filepath+"Dataset.FTFT")
+    elif (indict["S"]["plot"] and not indict["Y"]["plot"]):
+        newdict["FTFT"] = copy.deepcopy(indict["S"])
+    elif (not indict["S"]["plot"] and indict["Y"]["plot"]):
+        newdict["FTFT"] = copy.deepcopy(indict["Y"])
+    else:
+        raise ValueError("S and Y datasets are empty. FTFT cannot be created.")
+
+    # FF0F used by Uli Christensen (UC dataset)
     if indict["UC"]["plot"]:
         newdict["FF0F"] = copy.deepcopy(indict["UC"])
     else:
         raise ValueError("UC dataset is empty. FF0F cannot be created.")
 
+    # Coupled-Earth simulations of Aubert
     if indict["APath"]["plot"]:
         newdict["CE"] = copy.deepcopy(indict["APath"])
     else:
         raise ValueError("APath dataset is empty. CE cannot be created.")
 
+    # Leeds simulations
     if indict["L"]["plot"]:
-        # filter Leeds simulations
-        dL_Ir0   = filterLeedsDict(indict["L"], fkey="Ir", condition="==0.")
-        dL_FTFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FTFF'")
-        dL_FFFF  = filterLeedsDict(dL_Ir0, fkey="TBC", condition="=='FFFF'")
-        dL_mixed = filterLeedsDict(indict["L"], fkey="Ir", condition="!=0.")
-       
-        # delete unseful stuff 
-        del dL_FTFF["TBC"], dL_FTFF["Ir"], dL_FTFF["ar"]
-        del dL_FFFF["TBC"], dL_FFFF["Ir"], dL_FFFF["ar"]
-        del dL_mixed["TBC"], dL_mixed["Ir"], dL_mixed["ar"]
+        if not quiet:
+            print("\nLeeds dataset:")
+            print(indict["L"]["id"])
 
-        # merge with other simulations data
+        # Retain all "standard" models:
+        dL_1 = filterLeedsDict(indict["L"], fkey="HM", condition=" != 'COMBO'") # heating mode
+        dL_std = filterLeedsDict(dL_1, fkey="OHFtype", condition=" == 'None'") # outer boundary heat flux type
+        # Now what remains are "Mixed" simulations. They include:
+        #  1) Ir<0 (stably stratified and 0F modelsi at the top)
+        #  2) Ir>0 (internal heating)
+        #  3) Heterogeneous CMB heat flux
+        #  4) Davies and Gubbins' buoyancy profiles
+        for i in range(len(dL_std["id"])):
+            cond = " != '"+dL_std["id"][i]+"'"
+            if i==0:
+                dL_mixed = filterLeedsDict(indict["L"], fkey="id", condition=cond)
+            else:
+                dL_mixed = filterLeedsDict(dL_mixed, fkey="id", condition=cond)
+
+        # Get FTFF and FFFF models from "standard" subset
+        dL_FTFF  = filterLeedsDict(dL_std, fkey="TBC", condition="=='FTFF'")
+        dL_FFFF  = filterLeedsDict(dL_std, fkey="TBC", condition="=='FFFF'")
+
+        # check that no of simulations is consistent
+        dL_n = dL_mixed["nsims"]+dL_FTFF["nsims"]+dL_FFFF["nsims"]
+        if (dL_n != indict["L"]["nsims"]):
+            raise ValueError("Something went wrong in the grouping of Leeds models")
+
+        # Check that there are no duplicate/missing models in the new groupings
+        dL_ids = np.concatenate((np.array(dL_mixed["id"]),np.array(dL_FTFF["id"]),np.array(dL_FFFF["id"])))
+        if (not any(np.sort(dL_ids) == np.sort(indict["L"]["id"]))):
+            raise ValueError("Something went wrong...there are missing models in Leeds grouping.")
+        if (len(np.unique(dL_ids)) != indict["L"]["nsims"]):
+            raise ValueError("Something went wrong...there are duplicate models in Leeds grouping.")
+ 
+        # !!
+        # ! From the Mixed subset manually remove LEDA030, LEDA067 and LEDA071. !
+        # ! This is consistent with the manuscript of Davies et al (2021).      !
+        # ! These models were not considered in the analysis because the        !
+        # ! grouping was not correct.                                           !
+        # ! Note that in the current version of the code they are not removed   !
+        # ! when considering models by author.                                  !
+        exclude_id = ["LEDA030", "LEDA067", "LEDA071"]
+        print("Excluding the following models :",exclude_id)
+        for i in range(len(exclude_id)):
+            cond = " != '"+exclude_id[i]+"'"
+            dL_mixed = filterLeedsDict(dL_mixed, fkey="id", condition=cond)
+        # !!
+
+        if check:
+            writegroupingcheckLeeds(dL_FTFF, outfile=filepath+"Dataset.L_FTFF")
+            writegroupingcheckLeeds(dL_FFFF, outfile=filepath+"Dataset.L_FFFF")
+            writegroupingcheckLeeds(dL_mixed, outfile=filepath+"Dataset.L_Mixed")
+
+        if not quiet: 
+            print("\nGrouping Leeds simulations...")
+            print("Mixed models:")
+            print(dL_mixed["id"])
+            print("no = %s" %(dL_mixed["nsims"]))
+            print("standard, FTFF:")
+            print(dL_FTFF["id"])
+            print("no = %s" %(dL_FTFF["nsims"]))
+            print("standard, FFFF:")
+            print(dL_FFFF["id"])
+            print("no = %s" %(dL_FFFF["nsims"]))
+            print("... done!")
+        
+        # delete keys to make it compatible with the other simulation dictionaries
+        del dL_FTFF["TBC"], dL_FTFF["Ir"], dL_FTFF["ar"], dL_FTFF["OHFtype"], dL_FTFF["HM"], dL_FTFF["id"], dL_FTFF["eps"], dL_FTFF["Ra"]
+        del dL_FFFF["TBC"], dL_FFFF["Ir"], dL_FFFF["ar"], dL_FFFF["OHFtype"], dL_FFFF["HM"], dL_FFFF["id"], dL_FFFF["eps"], dL_FFFF["Ra"]
+        del dL_mixed["TBC"], dL_mixed["Ir"], dL_mixed["ar"], dL_mixed["OHFtype"], dL_mixed["HM"], dL_mixed["id"], dL_mixed["eps"], dL_mixed["Ra"]
+
+        # generate FFFF grouping
         newdict["FFFF"]  = copy.deepcopy(dL_FFFF)
     else:
         raise ValueError("Leeds dataset is empty. FFFF cannot be created.")
+
+    # generate FTFF grouping
     if (not indict["L"]["plot"] and not indict["UCt"]["plot"]):
-        raise ValueError("Leeds/UCt datasets are empty. FTFF cannot be created.")
+        raise ValueError("Leeds and UCt datasets are empty. FTFF cannot be created.")
     else:
         newdict["FTFF"]  = mergeDict(indict["UCt"], dL_FTFF)
 
+    # generate Mixed grouping
     if (not indict["A"]["plot"] and not indict["L"]["plot"]):
-        raise ValueError("Leeds/A datasets are empty. Mixed dataset cannot be created.")
+        raise ValueError("Leeds and A datasets are empty. Mixed dataset cannot be created.")
     else:
         newdict["Mixed"] = mergeDict(indict["A"], dL_mixed)
 
@@ -1299,10 +1387,10 @@ def redefineDataDict(indict, quiet=False):
     newdict["Mixed"]["plot"] = False
     newdict["CE"]["plot"]    = False   
 
-    # fit field strengths of these merged datasets
+    # fit field strengths of the grouped datasets
     print("")
     for key in newdict:
-        print("Fitting new datset: ",key)
+        print("Fitting new dataset: ",key)
         newdict[key]['rmsINT']['ssr'], newdict[key]['rmsINT']['m'], newdict[key]['rmsINT']['c'], newdict[key]['rmsINT']['res'] = \
             fits(newdict[key]['p'], newdict[key]['rmsINT']['Le'], newdict[key]['fohm'])
         newdict[key]['rmsCMB']['ssr'], newdict[key]['rmsCMB']['m'], newdict[key]['rmsCMB']['c'], newdict[key]['rmsCMB']['res'] = \
@@ -1317,4 +1405,22 @@ def writefilecheck(indict, outfiletag=None):
             outf = outfiletag + '.' + indict[key]["dataset"]
             np.savetxt(outf, np.c_[indict[key]["Rm"],indict[key]["fdip"],indict[key]["MEKE"],
                                       indict[key]["E"]/indict[key]["Pm"], indict[key]["rmsINT"]['Le'], indict[key]["p"], indict[key]['fohm'] ],
-                       fmt=['%.0f','%.2f','%.2f','%2e','%2e','%2e','%2e'], header="Rm    fdip    ME/KE  E/Pm         LeRMS            p             fohm", delimiter="    ")
+                       fmt=['%.0f','%.2f','%.2f','%.2e','%.2e','%.2e','%.2e'],
+                       header="Rm    fdip    ME/KE  E/Pm         LeRMS            p             fohm", delimiter="    ")
+
+def writegroupingcheck(indict, outfile=None):
+    np.savetxt(outfile, np.c_[indict["Rm"],indict["fdip"],indict["MEKE"],
+                                      indict["E"]/indict["Pm"], indict["rmsINT"]['Le'], indict["p"], indict['fohm'] ],
+                       fmt=['%.0f','%.2f','%.2f','%.2e','%.2e','%.2e','%.2e'],
+               header="Rm    fdip    ME/KE  E/Pm         LeRMS            p             fohm", delimiter="    ")
+
+def writegroupingcheckLeeds(indict, outfile=None):
+    f = open(outfile, "w")
+    header = "id       E         Ra     Pm    ar    TBC   OHFt  eps   HM  Ir    Rm   fdip  ME/KE"+"\n"
+    f.write(header)
+    for i in range(len(indict["E"])):
+        line = "{0:s}  {1:.2e}  {2:.1f}  {3:.1f}  {4:.2f}  {5:s}  {6:s}  {7:.2f}  {8:s}  {9:.2f}  {10:.0f}  {11:.2f}  {12:.2f}".format(indict["id"][i],
+               indict["E"][i],indict["Ra"][i],indict["Pm"][i],indict["ar"][i],indict["TBC"][i],
+               indict["OHFtype"][i],indict["eps"][i],indict["HM"][i],indict["Ir"][i],indict["Rm"][i],indict["fdip"][i],indict["MEKE"][i]) 
+        f.write(line+"\n")
+    f.close()
