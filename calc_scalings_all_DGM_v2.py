@@ -22,7 +22,7 @@ if (myEkOPm==1):
 else:
     EkOPm_range = None
 if (myEr==1):
-    EMoEK_range = [2.0 ,1.e+19]
+    EMoEK_range = [5.0 ,1.e+19]
 else:
     EMoEK_range = None
 # choose the internal colour of symbols ("Re","Rm","bdip", "log Rm", "log Re")
